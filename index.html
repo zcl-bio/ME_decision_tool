@@ -2,17 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BioFire ME Panel — Clinical Decision Support Tool</title>
-<meta name="description" content="Interactive clinical decision support tool for interpreting BioFire FilmArray Meningitis/Encephalitis Panel results in pediatric emergency medicine.">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ME Syndromic Panel Decision Support — Pediatric Emergency Medicine</title>
+<meta name="description" content="Interactive clinical decision support tool for interpreting meningitis/encephalitis syndromic panel results in the pediatric emergency room.">
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #fff; }
-  input[type="range"] { height: 6px; }
-  table { border-spacing: 0; }
-  button { transition: all 0.15s ease; }
-  button:hover { opacity: 0.85; }
-  a:hover { opacity: 0.7; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#fff}
+input[type="range"]{height:6px}
+table{border-spacing:0}
+button{transition:all 0.15s ease}
+button:hover{opacity:0.85}
+a:hover{opacity:0.7}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -21,29 +21,33 @@
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const { useState, useMemo } = React;
-
+const{useState,useMemo}=React;
 
 const REFS = {
-  leber: { short: "Leber 2016", full: "Leber AL, et al. J Clin Microbiol. 2016;54(9):2251–2261.", url: "https://pubmed.ncbi.nlm.nih.gov/27335149/" },
-  fda: { short: "FDA DEN150013", full: "FDA De Novo Decision Summary DEN150013. 2015.", url: "https://www.accessdata.fda.gov/cdrh_docs/reviews/DEN150013.pdf" },
-  tansarli: { short: "Tansarli 2020", full: "Tansarli GS, Chapin KC. Clin Microbiol Infect. 2020;26(3):281–290.", url: "https://pubmed.ncbi.nlm.nih.gov/31760115/" },
-  trujillo: { short: "Trujillo-Gomez 2022", full: "Trujillo-Gomez J, et al. eClinicalMedicine. 2022;44:101275.", url: "https://www.thelancet.com/journals/eclinm/article/PIIS2589-5370(22)00005-0/fulltext" },
-  myint: { short: "Myint 2025", full: "Myint T, et al. Microbiol Spectr. 2025;13(2):e0001424. (n=7,551)", url: "https://pubmed.ncbi.nlm.nih.gov/39714177/" },
-  schnuriger: { short: "Schnuriger 2022", full: "Schnuriger A, et al. Microbiol Spectr. 2022;10:e02774-21. (n=1,744 Paris)", url: "https://journals.asm.org/doi/10.1128/spectrum.02774-21" },
-  perera: { short: "Perera 2026", full: "Perera M, et al. Microbiol Spectr. 2026;14(1):e0062025.", url: "https://pubmed.ncbi.nlm.nih.gov/41313027/" },
-  cruz: { short: "Cruz 2018", full: "Cruz AT, et al. Pediatrics. 2018;141(2):e20171688. (n=26,533)", url: "https://pubmed.ncbi.nlm.nih.gov/29437889/" },
-  london_ev: { short: "OFID 2026", full: "Outcomes in children with EV meningitis in London, 2013–2023. OFID. 2026;13(3).", url: "https://academic.oup.com/ofid/article/13/3/ofag112/8512028" },
-  hudson: { short: "Hudson 2020", full: "Hudson JA, et al. Rev Med Virol. 2020;30:e2083.", url: "https://pubmed.ncbi.nlm.nih.gov/31524309/" },
-  britton: { short: "Britton 2016", full: "Britton PN, et al. Pediatrics. 2016;137(2):e20152848.", url: "https://pubmed.ncbi.nlm.nih.gov/26791970/" },
-  archimbaud: { short: "Archimbaud 2013", full: "Archimbaud C, et al. PLoS ONE. 2013;8(7):e68571.", url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3708915/" },
-  idsa: { short: "IDSA 2004", full: "Tunkel AR, et al. Clin Infect Dis. 2004;39(9):1267–1284.", url: "https://academic.oup.com/cid/article/39/9/1267/402080" },
-  who: { short: "WHO 2025", full: "WHO guidelines on meningitis diagnosis, treatment and care. 2025.", url: "https://www.ncbi.nlm.nih.gov/books/NBK614847/" },
-  nigrovic_meta: { short: "Nigrovic 2012", full: "Nigrovic LE, et al. Arch Dis Child. 2012;97(9):799–805.", url: "https://pubmed.ncbi.nlm.nih.gov/22764093/" },
-  dack: { short: "Dack 2022", full: "Dack K, et al. Hosp Pediatr. 2022;12(11):1002–1012.", url: "https://publications.aap.org/hospitalpediatrics/article/12/11/1002/189674/" },
-  hueth: { short: "Hueth 2022", full: "Hueth KD, et al. Antibiotics. 2022;11:1028. (SR & meta-analysis)", url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9405449/" },
-  broadhurst: { short: "Broadhurst 2020", full: "Broadhurst MJ, et al. J Clin Microbiol. 2020;58(9):e00311-20.", url: "https://journals.asm.org/doi/10.1128/jcm.00311-20" },
-  sargent: { short: "Sargent 2018", full: "Sargent L, et al. Future Microbiol. 2018;13(6):617–629.", url: "https://www.tandfonline.com/doi/abs/10.2217/fmb-2017-0238" },
+  leber: { short: "Leber 2016", url: "https://pubmed.ncbi.nlm.nih.gov/27335149/" },
+  fda: { short: "FDA Decision Summary", url: "https://www.accessdata.fda.gov/cdrh_docs/reviews/DEN150013.pdf" },
+  tansarli: { short: "Tansarli 2020", url: "https://pubmed.ncbi.nlm.nih.gov/31760115/" },
+  trujillo: { short: "Trujillo-Gómez 2022", url: "https://www.thelancet.com/journals/eclinm/article/PIIS2589-5370(22)00005-0/fulltext" },
+  myint: { short: "Myint 2025", url: "https://pubmed.ncbi.nlm.nih.gov/39714177/" },
+  schnuriger: { short: "Schnuriger 2022", url: "https://journals.asm.org/doi/10.1128/spectrum.02774-21" },
+  perera: { short: "Perera 2026", url: "https://pubmed.ncbi.nlm.nih.gov/41313027/" },
+  cruz: { short: "Cruz 2018", url: "https://pubmed.ncbi.nlm.nih.gov/29437889/" },
+  london_ev: { short: "OFID 2026", url: "https://academic.oup.com/ofid/article/13/3/ofag112/8512028" },
+  hudson: { short: "Hudson 2020", url: "https://pubmed.ncbi.nlm.nih.gov/31524309/" },
+  britton: { short: "Britton 2016", url: "https://pubmed.ncbi.nlm.nih.gov/26791970/" },
+  archimbaud: { short: "Archimbaud 2013", url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3708915/" },
+  idsa: { short: "IDSA 2004", url: "https://academic.oup.com/cid/article/39/9/1267/402080" },
+  who: { short: "WHO 2025", url: "https://www.ncbi.nlm.nih.gov/books/NBK614847/" },
+  nigrovic_meta: { short: "Nigrovic 2012 (BMS)", url: "https://pubmed.ncbi.nlm.nih.gov/22764093/" },
+  nigrovic_orig: { short: "Nigrovic 2007", url: "https://pubmed.ncbi.nlm.nih.gov/17200475/" },
+  dack: { short: "Dack 2022", url: "https://publications.aap.org/hospitalpediatrics/article/12/11/1002/189674/" },
+  broadhurst: { short: "Broadhurst 2020", url: "https://journals.asm.org/doi/10.1128/jcm.00311-20" },
+  sargent: { short: "Sargent 2018", url: "https://www.tandfonline.com/doi/abs/10.2217/fmb-2017-0238" },
+  mintegi: { short: "Mintegi 2020 (MSE)", url: "https://publications.aap.org/pediatrics/article-abstract/146/3/e20201126/77120/" },
+  cohn_lyme: { short: "Cohn 2012 (Rule of 7s)", url: "https://pubmed.ncbi.nlm.nih.gov/22184651/" },
+  rees_bms: { short: "Rees 2019", url: "https://pubmed.ncbi.nlm.nih.gov/30535235/" },
+  gutierrez: { short: "Gutierrez 2026", url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12792051/" },
+  safercare: { short: "Safer Care Victoria 2025", url: "https://www.safercare.vic.gov.au/publications/good-practice-points/HSV-newborn" },
 };
 
 function RefLink({ id }) {
@@ -51,597 +55,633 @@ function RefLink({ id }) {
   if (!r) return null;
   return <a href={r.url} target="_blank" rel="noopener noreferrer" style={{ color: "#2563EB", textDecoration: "none", borderBottom: "1px dotted #2563EB", fontSize: "inherit" }}>{r.short}</a>;
 }
-
-const PATHOGENS = [
-  {
-    id: "ecoli", name: "E. coli K1", category: "bacteria", categoryLabel: "Gram-negative Bacterium",
-    fdaSensitivity: 100, fdaSpecificity: 100,
-    fdaNote: "3/3 detected; 0 FP in 1557 neg.",
-    fdaRefs: ["leber", "fda"],
-    trujilloSensitivity: null, trujilloSpecificity: null, trujilloNote: "Insufficient data for pooled estimate",
-    bestEstimateSensitivity: 100, bestEstimateSpecificity: 99.9,
-    bestEstimateNote: "Based on FDA study + Leber 2016. Small number of true positives limits precision.",
-    bestEstimateRefs: ["leber", "myint"],
-    prevalenceEstimate: 0.2, prevalenceRange: "0.1–0.5%",
-    prevalenceNote: "Positivity rate in Schnuriger 2022 (Paris, n=1,744): 0.2% of pediatric CSF. Primarily neonates <1 month.",
-    prevalenceRefs: ["schnuriger"],
-    treatment: "IV ceftriaxone or cefotaxime × 21 days (or 2 wks beyond first sterile culture). Add ampicillin for neonates.",
-    treatmentRoute: "IV only", canDischarge: false,
-    dischargeNote: "Requires prolonged IV antibiotics. Admission mandatory. High morbidity/mortality if untreated.",
-    guidelineRefs: ["idsa", "who"],
-    additionalNotes: "In neonates, always obtain blood culture. Consider repeat LP at 48–72 hrs to document sterilization. High mortality (10–30%) and sequelae rate.",
-    keyPediatricConsiderations: "Most common in neonates <28 days. K1 capsular antigen is a virulence factor. Often nonspecific presentation (irritability, poor feeding, temperature instability)."
-  },
-  {
-    id: "hflu", name: "H. influenzae", category: "bacteria", categoryLabel: "Gram-negative Bacterium",
-    fdaSensitivity: 100, fdaSpecificity: 99.7,
-    fdaNote: "3/3 detected; 1 FP in 1557 neg. Cross-reactivity with H. haemolyticus at >10⁵ CFU/mL.",
-    fdaRefs: ["leber", "fda"],
-    trujilloSensitivity: null, trujilloSpecificity: null, trujilloNote: "Suboptimal sensitivity in some individual studies",
-    bestEstimateSensitivity: 87.5, bestEstimateSpecificity: 99.7,
-    bestEstimateNote: "PPV 87.5% in Myint 2025 (n=7,551). FDA study had only 3 positives.",
-    bestEstimateRefs: ["myint", "leber"],
-    prevalenceEstimate: 0.15, prevalenceRange: "0.05–0.3%",
-    prevalenceNote: "Rare since Hib vaccination. 0.1% positivity in Schnuriger 2022.",
-    prevalenceRefs: ["schnuriger"],
-    treatment: "IV ceftriaxone or cefotaxime × 7–10 days. Consider dexamethasone in children ≥6 wks.",
-    treatmentRoute: "IV only", canDischarge: false,
-    dischargeNote: "Admission required. Chemoprophylaxis (rifampin) for close contacts if Hib confirmed.",
-    guidelineRefs: ["idsa", "who"],
-    additionalNotes: "Panel does NOT distinguish typeable (Hib) from non-typeable strains. Cross-reactivity with H. haemolyticus at high concentrations noted in FDA analytical studies.",
-    keyPediatricConsiderations: "Hib meningitis now rare in vaccinated populations. Verify vaccination status. Household contacts <4 yrs need rifampin prophylaxis."
-  },
-  {
-    id: "listeria", name: "L. monocytogenes", category: "bacteria", categoryLabel: "Gram-positive Bacterium",
-    fdaSensitivity: null, fdaSpecificity: 99.9,
-    fdaNote: "0 true positives in study. 2 FP reported. NPA 99.9%.",
-    fdaRefs: ["leber", "fda"],
-    trujilloSensitivity: null, trujilloSpecificity: null, trujilloNote: "Suboptimal sensitivity noted in available studies",
-    bestEstimateSensitivity: null, bestEstimateSpecificity: 99.9,
-    bestEstimateNote: "True sensitivity UNKNOWN due to rarity. False negatives reported in case reports. A negative result does NOT rule out Listeria.",
-    bestEstimateRefs: ["leber", "trujillo"],
-    prevalenceEstimate: 0.05, prevalenceRange: "<0.1%",
-    prevalenceNote: "Very rare in children. 0/1,344 pediatric CSF in Schnuriger 2022. Primarily neonates, pregnant, elderly, immunocompromised.",
-    prevalenceRefs: ["schnuriger"],
-    treatment: "IV ampicillin + gentamicin × ≥21 days.",
-    treatmentRoute: "IV only", canDischarge: false,
-    dischargeNote: "Admission mandatory. CRITICAL: Always add ampicillin empirically for neonates and immunocompromised regardless of ME panel result.",
-    guidelineRefs: ["idsa", "who"],
-    additionalNotes: "CRITICAL: The ME panel has limited validation for Listeria due to rarity. Intrinsically resistant to cephalosporins—ceftriaxone alone does NOT cover Listeria.",
-    keyPediatricConsiderations: "Primarily neonates (maternal transmission) and immunocompromised. Must use ampicillin—intrinsically cephalosporin-resistant."
-  },
-  {
-    id: "nmen", name: "N. meningitidis", category: "bacteria", categoryLabel: "Gram-negative Bacterium",
-    fdaSensitivity: null, fdaSpecificity: 99.9,
-    fdaNote: "0 true positives in study. 1 FP. NPA 99.9%. Detects encapsulated strains only.",
-    fdaRefs: ["leber", "fda"],
-    trujilloSensitivity: null, trujilloSpecificity: null, trujilloNote: "Limited data",
-    bestEstimateSensitivity: null, bestEstimateSpecificity: 99.9,
-    bestEstimateNote: "True sensitivity unknown. Panel detects encapsulated strains only. Limited real-world validation.",
-    bestEstimateRefs: ["leber"],
-    prevalenceEstimate: 0.1, prevalenceRange: "0.05–0.2%",
-    prevalenceNote: "~0.1 per 100,000 in US (all ages). Declining with vaccination. 0.06% in Schnuriger 2022.",
-    prevalenceRefs: ["schnuriger"],
-    treatment: "IV ceftriaxone or penicillin G × 5–7 days. Droplet precautions until 24 hrs of effective antibiotics.",
-    treatmentRoute: "IV only", canDischarge: false,
-    dischargeNote: "Admission mandatory. Public health notification required. Close contact chemoprophylaxis (ciprofloxacin, rifampin, or ceftriaxone).",
-    guidelineRefs: ["idsa", "who"],
-    additionalNotes: "Panel only detects ENCAPSULATED strains. Contact prophylaxis is critical. Can present with fulminant purpura, shock, DIC.",
-    keyPediatricConsiderations: "Highest incidence in infants <1 yr and adolescents 16–21 yrs. Rapid deterioration possible. Serogroup testing needed."
-  },
-  {
-    id: "sagal", name: "S. agalactiae (GBS)", category: "bacteria", categoryLabel: "Gram-positive Bacterium",
-    fdaSensitivity: 0, fdaSpecificity: 99.9,
-    fdaNote: "1 true positive MISSED (PPA 0%); 1 FP. ONLY 1 positive case in study—0% sensitivity is misleading.",
-    fdaRefs: ["leber", "fda"],
-    trujilloSensitivity: null, trujilloSpecificity: null, trujilloNote: "Limited data",
-    bestEstimateSensitivity: 78.6, bestEstimateSpecificity: 99.9,
-    bestEstimateNote: "PPV 78.6% in Myint 2025 (n=7,551). FDA study had only 1 positive (insufficient). Highest FP rate among bacterial targets in Myint study (21.4% of positives were FP).",
-    bestEstimateRefs: ["myint"],
-    prevalenceEstimate: 0.3, prevalenceRange: "0.1–0.5%",
-    prevalenceNote: "Primarily neonates. Late-onset GBS (7–90 days) can present as meningitis. 0.4% in Schnuriger 2022 pediatric cohort.",
-    prevalenceRefs: ["schnuriger"],
-    treatment: "IV ampicillin or penicillin G × 14–21 days.",
-    treatmentRoute: "IV only", canDischarge: false,
-    dischargeNote: "Admission mandatory. Repeat LP recommended to document sterilization.",
-    guidelineRefs: ["idsa"],
-    additionalNotes: "FDA 0% sensitivity is artifact of 1 case—do not interpret as true performance. Real-world PPV ~79%. Always send concurrent blood culture.",
-    keyPediatricConsiderations: "Most common cause of neonatal meningitis. Early-onset (0–6 days) vs late-onset (7–90 days)."
-  },
-  {
-    id: "spn", name: "S. pneumoniae", category: "bacteria", categoryLabel: "Gram-positive Bacterium",
-    fdaSensitivity: 100, fdaSpecificity: 99.2,
-    fdaNote: "16/16 detected (PPA 100%); 12 FP in 1544 neg (NPA 99.2%). HIGHEST bacterial FP rate. Also 6 unexpected FPs in reproducibility study.",
-    fdaRefs: ["leber", "fda"],
-    trujilloSensitivity: 93, trujilloSpecificity: 99.3,
-    trujilloNote: "eClinicalMedicine 2022 meta-analysis",
-    trujilloRefs: ["trujillo"],
-    bestEstimateSensitivity: 95, bestEstimateSpecificity: 99.2,
-    bestEstimateNote: "PPV 95.1% in Myint 2025. FDA: 100% PPA but highest FP rate of any bacterial target (12 FPs + 6 in reproducibility).",
-    bestEstimateRefs: ["myint", "leber"],
-    prevalenceEstimate: 0.5, prevalenceRange: "0.3–1.0%",
-    prevalenceNote: "Most common bacterial cause in children >1 mo post-Hib era. 1.0% in Schnuriger 2022 (pediatric ≤3 mo: 0.5%; 3 mo–15 yr: 1.6%).",
-    prevalenceRefs: ["schnuriger"],
-    treatment: "IV vancomycin + ceftriaxone empirically → narrow when susceptibilities known. Duration: 10–14 days. Consider dexamethasone (0.15 mg/kg q6h × 2d) starting with first antibiotic dose in children ≥6 wks.",
-    treatmentRoute: "IV only", canDischarge: false,
-    dischargeNote: "Admission mandatory. ICU may be needed. Hearing loss in ~25% of survivors. Mortality 5–10% in children. Audiologic evaluation before discharge.",
-    guidelineRefs: ["idsa", "who"],
-    additionalNotes: "Highest false positive rate of all bacterial targets. S. pneumoniae FP is the most commonly reported false positive in the literature and in the FDA reproducibility study. Clinical correlation essential.",
-    keyPediatricConsiderations: "Most common bacterial meningitis pathogen in vaccinated children >1 mo. Dexamethasone (0.15 mg/kg q6h × 2 days) with first antibiotic dose. Audiologic evaluation mandatory before discharge."
-  },
-  {
-    id: "cmv", name: "Cytomegalovirus (CMV)", category: "virus", categoryLabel: "DNA Virus (Herpesviridae)",
-    fdaSensitivity: 100, fdaSpecificity: 99.7,
-    fdaNote: "8/8 detected; 4 FP.",
-    fdaRefs: ["leber", "fda"],
-    trujilloSensitivity: null, trujilloSpecificity: null, trujilloNote: "Limited data",
-    bestEstimateSensitivity: 100, bestEstimateSpecificity: 99.7,
-    bestEstimateNote: "Limited positive cases. CMV in CSF may represent incidental shedding in immunocompetent patients.",
-    bestEstimateRefs: ["leber"],
-    prevalenceEstimate: 0.3, prevalenceRange: "0.1–0.5%",
-    prevalenceNote: "0.3% positivity in Schnuriger 2022. CMV CNS disease primarily in immunocompromised and congenital infection.",
-    prevalenceRefs: ["schnuriger"],
-    treatment: "Immunocompromised: IV ganciclovir → valganciclovir. Congenital: IV ganciclovir → oral valganciclovir × 6 mo. Immunocompetent: often no treatment needed.",
-    treatmentRoute: "IV → oral (if treating)", canDischarge: false,
-    dischargeNote: "Most cases warrant admission for workup. In immunocompetent children, CMV in CSF is often incidental—clinical correlation essential before starting ganciclovir.",
-    guidelineRefs: [],
-    additionalNotes: "CMV seroprevalence is high. Detection does not necessarily mean disease. Quantitative CMV PCR may help distinguish disease from incidental shedding.",
-    keyPediatricConsiderations: "Consider congenital CMV in infants <3 mo. In immunocompromised children (transplant, oncology), CMV encephalitis is a serious consideration."
-  },
-  {
-    id: "ev", name: "Enterovirus", category: "virus", categoryLabel: "RNA Virus (Picornaviridae)",
-    fdaSensitivity: 95.7, fdaSpecificity: 99.8,
-    fdaNote: "44/46 detected (PPA 95.7%); 2 FP (NPA 99.8%). Two FN confirmed by comparator PCR.",
-    fdaRefs: ["leber", "fda"],
-    trujilloSensitivity: 93, trujilloSpecificity: 99.4,
-    trujilloNote: "eClinicalMedicine 2022: high sensitivity and specificity",
-    trujilloRefs: ["trujillo"],
-    bestEstimateSensitivity: 94, bestEstimateSpecificity: 99.5,
-    bestEstimateNote: "Consistent high performance. Most extensively validated target (highest prevalence). Cross-reactivity with rhinovirus noted (rhinovirus rarely in CSF).",
-    bestEstimateRefs: ["leber", "trujillo", "tansarli"],
-    prevalenceEstimate: 5.0, prevalenceRange: "2–15%",
-    prevalenceNote: "Most common pathogen detected. 12.7% of all pediatric CSF in Schnuriger 2022 (17.7% in infants ≤3 mo). Highly seasonal (summer/fall). Up to 41% in febrile infants <3 mo during EV season.",
-    prevalenceRefs: ["schnuriger", "archimbaud"],
-    treatment: "Supportive care only. No antivirals for immunocompetent children. IVIG considered in severe neonatal disease or agammaglobulinemia.",
-    treatmentRoute: "Supportive (oral)", canDischarge: true,
-    dischargeNote: "YES — well-appearing children who tolerate oral fluids can be discharged with return precautions.\n\nEvidence:\n• London multicenter 2013–2023 (n=243): 95.6% full recovery in infants <3 mo [OFID 2026]\n• Archimbaud 2013: faster EV PCR → shorter LOS and antibiotic duration\n• French febrile infant study: abx 1.9 days (EV+) vs 4.1 days (EV−), p<0.001\n• 506-case cohort: no serious complications or deaths in EV+ children\n\nCautions:\n• Neonates <28 days: consider observation even if EV+\n• 29–60 days: discharge if well-appearing, afebrile, feeding well, reliable follow-up 24–48 hrs",
-    guidelineRefs: ["who"],
-    additionalNotes: "EV is the single most impactful positive result on the ME panel—can safely shorten/eliminate antibiotics and reduce LOS. Does NOT subtype (EV71, EV-D68 associated with more severe disease but uncommon).",
-    keyPediatricConsiderations: "EV71 and EV-D68 can cause severe neurologic disease (encephalitis, acute flaccid myelitis) but are rare. Panel does not subtype. Vast majority of EV meningitis is benign and self-limited."
-  },
-  {
-    id: "hsv1", name: "HSV-1", category: "virus", categoryLabel: "DNA Virus (Herpesviridae)",
-    fdaSensitivity: 100, fdaSpecificity: 99.8,
-    fdaNote: "11/11 detected (PPA 100%); 3 FP (NPA 99.8%).",
-    fdaRefs: ["leber", "fda"],
-    trujilloSensitivity: 80, trujilloSpecificity: 99.5,
-    trujilloNote: "eClinicalMedicine 2022: SUBOPTIMAL sensitivity for HSV-1",
-    trujilloRefs: ["trujillo"],
-    bestEstimateSensitivity: 85, bestEstimateSpecificity: 99.5,
-    bestEstimateNote: "VARIABLE across studies (75–100%). Some report suboptimal sensitivity. A NEGATIVE result does NOT safely rule out HSV encephalitis.",
-    bestEstimateRefs: ["trujillo", "schnuriger", "leber"],
-    prevalenceEstimate: 0.5, prevalenceRange: "0.2–1.0%",
-    prevalenceNote: "HSV-1 causes ~85% of sporadic encephalitis beyond neonatal period. ~1/1,000,000 children/yr. 0.6% in Schnuriger 2022.",
-    prevalenceRefs: ["schnuriger", "cruz"],
-    treatment: "IV acyclovir 20 mg/kg q8h (neonates) or 10 mg/kg q8h (>3 mo) × 21 days (neonates/encephalitis) or 14 days (meningitis). Then oral suppressive acyclovir × 6 mo in neonates.",
-    treatmentRoute: "IV only", canDischarge: false,
-    dischargeNote: "NEVER discharge. Admission mandatory for IV acyclovir. Untreated mortality >70%. Even treated: mortality ~15–20% for encephalitis; >50% survivors have neurological sequelae.",
-    guidelineRefs: ["idsa"],
-    additionalNotes: "CRITICAL SAFETY: If clinical suspicion for HSV encephalitis is present (fever, AMS, focal neuro findings, temporal lobe on MRI), do NOT stop acyclovir based on a negative ME panel alone. Send confirmatory standalone HSV PCR.",
-    keyPediatricConsiderations: "Beyond neonatal period, HSV-1 encephalitis presents with focal neuro findings, behavioral changes, temporal lobe involvement. Clinical recognition is key—panel alone should not drive treatment decisions."
-  },
-  {
-    id: "hsv2", name: "HSV-2", category: "virus", categoryLabel: "DNA Virus (Herpesviridae)",
-    fdaSensitivity: 100, fdaSpecificity: 99.9,
-    fdaNote: "29/29 detected (PPA 100%); 1 FP (NPA 99.9%). Best-validated HSV target.",
-    fdaRefs: ["leber", "fda"],
-    trujilloSensitivity: 97, trujilloSpecificity: 99.8,
-    trujilloNote: "eClinicalMedicine 2022: high sensitivity",
-    trujilloRefs: ["trujillo"],
-    bestEstimateSensitivity: 97, bestEstimateSpecificity: 99.9,
-    bestEstimateNote: "Better validated than HSV-1 (more positive cases). HSV-2 more commonly causes meningitis vs encephalitis.",
-    bestEstimateRefs: ["leber", "trujillo"],
-    prevalenceEstimate: 1.0, prevalenceRange: "0.5–2.0%",
-    prevalenceNote: "HSV-2 causes ~75% of neonatal HSV. Prevalence 0.42% in infants <60 days evaluated for CNS infection (Cruz 2018, n=26,533). 1.5% in Schnuriger 2022.",
-    prevalenceRefs: ["cruz", "schnuriger"],
-    treatment: "IV acyclovir 20 mg/kg q8h (neonates) or 10 mg/kg q8h (children) × 14–21 days. Oral suppressive therapy × 6 mo in neonates.",
-    treatmentRoute: "IV only", canDischarge: false,
-    dischargeNote: "Admission mandatory for IV acyclovir. Neonatal HSV is a medical emergency.",
-    guidelineRefs: ["idsa"],
-    additionalNotes: "HSV-2 can cause benign recurrent meningitis (Mollaret) in older children/adolescents—may be managed differently. But initial presentation always warrants admission + IV acyclovir.",
-    keyPediatricConsiderations: "In neonates, HSV can present as SEM (skin/eye/mouth), CNS, or disseminated disease. Always check for vesicles, hepatitis, coagulopathy. Disseminated disease has highest mortality."
-  },
-  {
-    id: "hhv6", name: "HHV-6", category: "virus", categoryLabel: "DNA Virus (Herpesviridae)",
-    fdaSensitivity: 85.7, fdaSpecificity: 99.6,
-    fdaNote: "6/7 detected (PPA 85.7%); 7 FP (NPA 99.6%). LOWEST sensitivity, HIGHEST FP rate on panel. Also 1 unexpected FP in reproducibility study.",
-    fdaRefs: ["leber", "fda"],
-    trujilloSensitivity: null, trujilloSpecificity: null, trujilloNote: "Limited data",
-    bestEstimateSensitivity: 85, bestEstimateSpecificity: 99,
-    bestEstimateNote: "MOST PROBLEMATIC TARGET. Confounder: chromosomally integrated HHV-6 (ciHHV-6) in ~1% of population → always positive. NPA as low as 50% in some studies.",
-    bestEstimateRefs: ["leber", "perera"],
-    prevalenceEstimate: 1.8, prevalenceRange: "1.0–3.0%",
-    prevalenceNote: "1.8% positivity in Thakur (Columbia). 3.2% in Perera 2026 (Australia, n=1,490). But 1–2% of people have ciHHV-6 and will always test positive. True disease prevalence is lower.",
-    prevalenceRefs: ["perera"],
-    treatment: "Immunocompetent: usually no treatment (roseola is self-limited). Immunocompromised: IV ganciclovir or foscarnet if true CNS disease confirmed.",
-    treatmentRoute: "Supportive (immunocompetent)", canDischarge: true,
-    dischargeNote: "In immunocompetent children: most HHV-6 positive results are clinically insignificant.\n\n• Consider discharge with follow-up if clinically well\n• Confirmatory: whole blood qPCR to rule out ciHHV-6\n• In immunocompromised children: admit for further workup",
-    guidelineRefs: [],
-    additionalNotes: "HHV-6 is the most problematic target. The combination of lower sensitivity, higher FP rate, and ciHHV-6 confounder means clinical correlation is essential. Many institutions have diagnostic stewardship protocols specifically for HHV-6.",
-    keyPediatricConsiderations: "Primary HHV-6 (roseola) peaks at 6–15 mo. CNS involvement during primary infection usually self-limited. In febrile seizures + HHV-6 positive CSF, the HHV-6 likely caused the fever, not necessarily encephalitis."
-  },
-  {
-    id: "hpev", name: "Human Parechovirus", category: "virus", categoryLabel: "RNA Virus (Picornaviridae)",
-    fdaSensitivity: 100, fdaSpecificity: 100,
-    fdaNote: "4/4 detected (PPA 100%); 0 FP (NPA 100%). Small n.",
-    fdaRefs: ["leber", "fda"],
-    trujilloSensitivity: null, trujilloSpecificity: null, trujilloNote: "Limited data",
-    bestEstimateSensitivity: 100, bestEstimateSpecificity: 99.9,
-    bestEstimateNote: "Excellent but limited positive cases. Confidence intervals wide.",
-    bestEstimateRefs: ["leber"],
-    prevalenceEstimate: 2.0, prevalenceRange: "1–5%",
-    prevalenceNote: "3–17% of infants with suspected CNS infection. 2.1% of pediatric CSF in Schnuriger 2022 (4.0% in ≤3 mo). Primarily HPeV-3 in infants <3 mo. Seasonal (biennial).",
-    prevalenceRefs: ["schnuriger"],
-    treatment: "Supportive care. No antivirals. IVIG considered in severe neonatal disease (limited evidence).",
-    treatmentRoute: "Supportive", canDischarge: true,
-    dischargeNote: "CONDITIONAL — more cautious than enterovirus:\n\n• Well-appearing infants >28 days feeding well: discharge reasonable with 24–48 hr follow-up\n• Neonates <28 days: consider observation\n• HPeV-3 associated with white matter injury on MRI in ~14% (Britton 2016)\n\nHudson 2020 systematic review: mostly good outcomes but data limited.\nCSF often shows NO pleocytosis despite true CNS infection—don't be falsely reassured by normal cell counts.",
-    guidelineRefs: [],
-    additionalNotes: "HPeV is UNIQUE: CSF often shows NO pleocytosis despite true CNS infection. Traditional CSF parameters may be falsely reassuring. The ME panel may be particularly valuable because standard CSF analysis can appear completely normal.",
-    keyPediatricConsiderations: "HPeV-3 is most virulent serotype. Characteristic: sepsis-like illness in young infant with normal CSF cell counts. Consider MRI if encephalitic features. Neurodevelopmental follow-up recommended for infants <3 mo."
-  },
-  {
-    id: "vzv", name: "VZV", category: "virus", categoryLabel: "DNA Virus (Herpesviridae)",
-    fdaSensitivity: 100, fdaSpecificity: 100,
-    fdaNote: "4/4 detected; 0 FP. Small n.",
-    fdaRefs: ["leber", "fda"],
-    trujilloSensitivity: null, trujilloSpecificity: null, trujilloNote: "Limited data",
-    bestEstimateSensitivity: 100, bestEstimateSpecificity: 99.5,
-    bestEstimateNote: "Some real-world studies report occasional FPs. Small sample limits confidence.",
-    bestEstimateRefs: ["leber"],
-    prevalenceEstimate: 0.3, prevalenceRange: "0.1–0.5%",
-    prevalenceNote: "Rare in vaccinated children. 0.2% in Schnuriger 2022. More common in immunocompromised and reactivation.",
-    prevalenceRefs: ["schnuriger"],
-    treatment: "IV acyclovir 10 mg/kg q8h × 7–14 days depending on severity/immune status. Oral valacyclovir potentially for mild meningitis in immunocompetent adolescents.",
-    treatmentRoute: "IV (initially)", canDischarge: false,
-    dischargeNote: "Generally admit for IV acyclovir. Mild VZV meningitis in immunocompetent older children may potentially be managed with oral valacyclovir after initial observation, but not standard practice.",
-    guidelineRefs: ["idsa"],
-    additionalNotes: "VZV can cause meningitis, encephalitis, vasculopathy, and cerebellitis. Check vaccination history.",
-    keyPediatricConsiderations: "VZV cerebellitis (acute cerebellar ataxia) is most common CNS complication of varicella. VZV vasculopathy can cause stroke."
-  },
-  {
-    id: "crypto", name: "Cryptococcus neoformans/gattii", category: "yeast", categoryLabel: "Yeast (Fungal)",
-    fdaSensitivity: 100, fdaSpecificity: 99.8,
-    fdaNote: "2/2 detected (C. gattii only); C. neoformans not observed. 3 FP. Some institutions do not report Crypto ME results due to FP concerns.",
-    fdaRefs: ["leber", "fda"],
-    trujilloSensitivity: null, trujilloSpecificity: null, trujilloNote: "Limited data",
-    bestEstimateSensitivity: 89, bestEstimateSpecificity: 99.8,
-    bestEstimateNote: "PPV 88.9% in Myint 2025. FPs reported in multiple studies.",
-    bestEstimateRefs: ["myint"],
-    prevalenceEstimate: 0.05, prevalenceRange: "<0.1%",
-    prevalenceNote: "Extremely rare in immunocompetent children. 0.06% in Schnuriger 2022. Primarily in HIV/AIDS (CD4 <100).",
-    prevalenceRefs: ["schnuriger"],
-    treatment: "Induction: IV amphotericin B + flucytosine × 2 wks. Consolidation: oral fluconazole × 8 wks. Maintenance: oral fluconazole long-term.",
-    treatmentRoute: "IV → oral", canDischarge: false,
-    dischargeNote: "Admission mandatory. Monitor ICP (therapeutic LPs). High mortality if untreated.",
-    guidelineRefs: ["who"],
-    additionalNotes: "False positives reported. Confirm with CSF CrAg and/or India ink. Some institutions stopped reporting Crypto ME results due to FP concerns. If positive in healthy child, strongly suspect FP.",
-    keyPediatricConsiderations: "Exceedingly rare in immunocompetent children. C. gattii can cause disease in immunocompetent (Pacific Northwest, Australia geographic risk)."
-  }
-];
-
-function calculatePPVNPV(sensitivity, specificity, prevalence) {
-  if (sensitivity == null || specificity == null || prevalence == null) return { ppv: null, npv: null };
-  const sens = sensitivity / 100;
-  const spec = specificity / 100;
-  const prev = prevalence / 100;
-  const ppv = (sens * prev) / (sens * prev + (1 - spec) * (1 - prev));
-  const npv = (spec * (1 - prev)) / (spec * (1 - prev) + (1 - sens) * prev);
-  return { ppv: ppv * 100, npv: npv * 100 };
-}
-
-const catCol = {
-  bacteria: { bg: "#FEE2E2", border: "#DC2626", text: "#991B1B", accent: "#EF4444" },
-  virus: { bg: "#DBEAFE", border: "#2563EB", text: "#1E3A5F", accent: "#3B82F6" },
-  yeast: { bg: "#FEF3C7", border: "#D97706", text: "#78350F", accent: "#F59E0B" }
-};
-
-const sf = "system-ui, -apple-system, sans-serif";
-
 function RefLinks({ ids }) {
-  if (!ids || ids.length === 0) return null;
+  if (!ids || !ids.length) return null;
   return <span style={{ fontSize: 10, color: "#888" }}> [{ids.map((id, i) => <span key={id}>{i > 0 && ", "}<RefLink id={id} /></span>)}]</span>;
 }
 
-function BmsCalculator() {
-  const [gram, setGram] = useState(false);
-  const [csf_anc, setCsfAnc] = useState(false);
-  const [csf_prot, setCsfProt] = useState(false);
-  const [peri_anc, setPeriAnc] = useState(false);
-  const [seizure, setSeizure] = useState(false);
+// prevalenceYoung = ≤3 months, prevalenceOlder = 3mo-15yr, from Schnuriger 2022 (n=1,744)
+const PATHOGENS = [
+  {
+    id: "ecoli", name: "E. coli K1", category: "bacteria", categoryLabel: "Gram-negative Bacterium", amxIndicated: true, amxLabel: "Antibiotics indicated",
+    fdaSens: 100, fdaSpec: 100, fdaNote: "3/3 detected; 0 FP in 1557 neg.", fdaRefs: ["leber","fda"],
+    trujilloSens: null, trujilloSpec: null, trujilloNote: "Insufficient data",
+    bestSens: 100, bestSpec: 99.9, bestNote: "Small n of true positives limits precision.", bestRefs: ["leber","myint"],
+    prevAll: 0.2, prevYoung: 0.4, prevOlder: 0.05, prevRange: "0.1–0.5%",
+    prevNote: "Primarily neonates <1 mo. 0.4% in ≤3 mo, rare in older children.",
+    prevRefs: ["schnuriger"],
+    treatment: "IV ceftriaxone or cefotaxime × 21 days. Add ampicillin for neonates. Repeat LP 48–72 hrs.",
+    treatmentRoute: "IV only", canDischarge: false,
+    dischargeNote: "Admission mandatory. High mortality (10–30%) and sequelae rate.",
+    guidelineRefs: ["idsa","who"],
+    empiricAbx: "Continue empiric ceftriaxone + vancomycin. Add ampicillin if <1 month. If confirmed, narrow to ceftriaxone (or per sensitivities) × 21 days.",
+    empiricAntiviral: "Acyclovir can be discontinued once E. coli confirmed and HSV ruled out.",
+    importantNotes: "K1 capsular antigen is virulence factor. Always obtain blood culture. Consider repeat LP at 48–72 hrs to document sterilization.",
+    pedNotes: "Most common in neonates <28 days. Often nonspecific presentation (irritability, poor feeding, temp instability)."
+  },
+  {
+    id: "hflu", name: "H. influenzae", category: "bacteria", categoryLabel: "Gram-negative Bacterium", amxIndicated: true, amxLabel: "Antibiotics indicated",
+    fdaSens: 100, fdaSpec: 99.7, fdaNote: "3/3 detected; 1 FP. Cross-reactivity with H. haemolyticus at >10⁵ CFU/mL.", fdaRefs: ["leber","fda"],
+    trujilloSens: null, trujilloSpec: null, trujilloNote: "Suboptimal sensitivity in some studies",
+    bestSens: 87.5, bestSpec: 99.7, bestNote: "PPV 87.5% in Myint 2025 (n=7,551). Only 3 positives in FDA study.", bestRefs: ["myint","leber"],
+    prevAll: 0.15, prevYoung: 0.1, prevOlder: 0.2, prevRange: "0.05–0.3%",
+    prevNote: "Rare since Hib vaccination.",
+    prevRefs: ["schnuriger"],
+    treatment: "IV ceftriaxone or cefotaxime × 7–10 days. Consider dexamethasone (0.15 mg/kg q6h × 2d) in children ≥6 wks—give with first antibiotic dose.",
+    treatmentRoute: "IV only", canDischarge: false,
+    dischargeNote: "Admission required. Chemoprophylaxis (rifampin) for close contacts if Hib confirmed.",
+    guidelineRefs: ["idsa","who"],
+    empiricAbx: "Continue empiric ceftriaxone. Can drop vancomycin if H. flu confirmed (intrinsically vancomycin-resistant anyway; cephalosporins are mainstay).",
+    empiricAntiviral: "Discontinue acyclovir.",
+    importantNotes: "Panel does NOT distinguish typeable (Hib) from non-typeable strains. Verify vaccination status. Household contacts <4 yrs need rifampin prophylaxis.",
+    pedNotes: "Hib meningitis now rare in vaccinated populations."
+  },
+  {
+    id: "listeria", name: "L. monocytogenes", category: "bacteria", categoryLabel: "Gram-positive Bacterium", amxIndicated: true, amxLabel: "Antibiotics indicated",
+    fdaSens: null, fdaSpec: 99.9, fdaNote: "0 true positives in study. 2 FP. NPA 99.9%.", fdaRefs: ["leber","fda"],
+    trujilloSens: null, trujilloSpec: null, trujilloNote: "Suboptimal sensitivity noted",
+    bestSens: null, bestSpec: 99.9, bestNote: "True sensitivity UNKNOWN. False negatives reported. A negative does NOT rule out Listeria.", bestRefs: ["leber","trujillo"],
+    prevAll: 0.05, prevYoung: 0.1, prevOlder: 0.01, prevRange: "<0.1%",
+    prevNote: "Very rare in children. Primarily neonates, immunocompromised.",
+    prevRefs: ["schnuriger"],
+    treatment: "IV ampicillin + gentamicin × ≥21 days. Intrinsically resistant to cephalosporins.",
+    treatmentRoute: "IV only", canDischarge: false,
+    dischargeNote: "Admission mandatory. ALWAYS add ampicillin empirically for neonates and immunocompromised regardless of ME panel result.",
+    guidelineRefs: ["idsa","who"],
+    empiricAbx: "CRITICAL: Ceftriaxone alone does NOT cover Listeria. Must add ampicillin for neonates and immunocompromised. If Listeria confirmed, switch to ampicillin + gentamicin × ≥21 days.",
+    empiricAntiviral: "Discontinue acyclovir if Listeria confirmed and HSV ruled out.",
+    importantNotes: "ME panel has limited validation for Listeria due to rarity. Intrinsically resistant to cephalosporins—ceftriaxone alone misses this pathogen.",
+    pedNotes: "Primarily neonates (maternal transmission) and immunocompromised."
+  },
+  {
+    id: "nmen", name: "N. meningitidis", category: "bacteria", categoryLabel: "Gram-negative Bacterium", amxIndicated: true, amxLabel: "Antibiotics indicated",
+    fdaSens: null, fdaSpec: 99.9, fdaNote: "0 true positives. 1 FP. Detects encapsulated strains only.", fdaRefs: ["leber","fda"],
+    trujilloSens: null, trujilloSpec: null, trujilloNote: "Limited data",
+    bestSens: null, bestSpec: 99.9, bestNote: "True sensitivity unknown. Detects encapsulated strains only.", bestRefs: ["leber"],
+    prevAll: 0.1, prevYoung: 0.05, prevOlder: 0.1, prevRange: "0.05–0.2%",
+    prevNote: "Declining with vaccination. ~0.1 per 100,000 US (all ages).",
+    prevRefs: ["schnuriger"],
+    treatment: "IV ceftriaxone or penicillin G × 5–7 days. Droplet precautions × 24 hrs of effective abx.",
+    treatmentRoute: "IV only", canDischarge: false,
+    dischargeNote: "Admission mandatory. Public health notification required. Close contact chemoprophylaxis (ciprofloxacin, rifampin, or ceftriaxone).",
+    guidelineRefs: ["idsa","who"],
+    empiricAbx: "Continue ceftriaxone. Can narrow once confirmed. Contact prophylaxis is critical and time-sensitive.",
+    empiricAntiviral: "Discontinue acyclovir.",
+    importantNotes: "Can present with fulminant purpura, shock, DIC. Rapid deterioration possible. Contact prophylaxis is time-sensitive.",
+    pedNotes: "Highest incidence in infants <1 yr and adolescents 16–21 yrs."
+  },
+  {
+    id: "sagal", name: "S. agalactiae (GBS)", category: "bacteria", categoryLabel: "Gram-positive Bacterium", amxIndicated: true, amxLabel: "Antibiotics indicated",
+    fdaSens: 0, fdaSpec: 99.9, fdaNote: "1 true positive MISSED (0/1). 1 FP. Only 1 case—0% is misleading.", fdaRefs: ["leber","fda"],
+    trujilloSens: null, trujilloSpec: null, trujilloNote: "Limited data",
+    bestSens: 78.6, bestSpec: 99.9, bestNote: "PPV 78.6% in Myint 2025 (n=7,551). Highest FP rate among bacteria in that study (21.4%).", bestRefs: ["myint"],
+    prevAll: 0.3, prevYoung: 0.6, prevOlder: 0.05, prevRange: "0.1–0.5%",
+    prevNote: "Primarily neonates. Late-onset GBS (7–90 days) presents as meningitis.",
+    prevRefs: ["schnuriger"],
+    treatment: "IV ampicillin or penicillin G × 14–21 days.",
+    treatmentRoute: "IV only", canDischarge: false,
+    dischargeNote: "Admission mandatory. Repeat LP to document sterilization.",
+    guidelineRefs: ["idsa"],
+    empiricAbx: "Narrow to ampicillin or penicillin G. Continue × 14–21 days. Repeat LP recommended.",
+    empiricAntiviral: "Discontinue acyclovir.",
+    importantNotes: "FDA 0% sensitivity is artifact of n=1—do not interpret as true performance. Real-world PPV ~79%.",
+    pedNotes: "Most common cause of neonatal meningitis. Early-onset (0–6d) vs late-onset (7–90d)."
+  },
+  {
+    id: "spn", name: "S. pneumoniae", category: "bacteria", categoryLabel: "Gram-positive Bacterium", amxIndicated: true, amxLabel: "Antibiotics indicated",
+    fdaSens: 100, fdaSpec: 99.2, fdaNote: "16/16 detected; 12 FP (NPA 99.2%). HIGHEST bacterial FP rate. Also 6 unexpected FPs in reproducibility study.", fdaRefs: ["leber","fda"],
+    trujilloSens: 93, trujilloSpec: 99.3, trujilloNote: "19 studies, n=11,351", trujilloRefs: ["trujillo"],
+    bestSens: 95, bestSpec: 99.2, bestNote: "PPV 95.1% in Myint 2025. Highest FP rate of all bacterial targets.", bestRefs: ["myint","leber"],
+    prevAll: 0.5, prevYoung: 0.5, prevOlder: 1.6, prevRange: "0.3–1.6%",
+    prevNote: "Most common bacterial cause in children >1 mo. 1.6% in 3mo–15yr (Schnuriger).",
+    prevRefs: ["schnuriger"],
+    treatment: "IV vancomycin + ceftriaxone empirically → narrow when susceptibilities known. 10–14 days. Dexamethasone (0.15 mg/kg q6h × 2d) with first abx dose in ≥6 wks.",
+    treatmentRoute: "IV only", canDischarge: false,
+    dischargeNote: "Admission mandatory. ICU may be needed. Hearing loss ~25%. Mortality 5–10% in children. Audiologic eval before discharge.",
+    guidelineRefs: ["idsa","who"],
+    empiricAbx: "Continue vancomycin + ceftriaxone until susceptibilities. If penicillin-susceptible, narrow to ceftriaxone alone. Adjunctive dexamethasone if not already started.",
+    empiricAntiviral: "Discontinue acyclovir.",
+    importantNotes: "Highest FP rate of all bacterial targets. Clinical correlation essential. Always confirm with culture.",
+    pedNotes: "Most common bacterial meningitis in vaccinated children >1 mo. Audiologic evaluation mandatory before discharge."
+  },
+  {
+    id: "cmv", name: "CMV", category: "virus", categoryLabel: "DNA Virus (Herpesviridae)", amxIndicated: false, amxLabel: "Antiviral if immunocompromised",
+    fdaSens: 100, fdaSpec: 99.7, fdaNote: "8/8 detected; 4 FP.", fdaRefs: ["leber","fda"],
+    trujilloSens: null, trujilloSpec: null, trujilloNote: "Limited data",
+    bestSens: 100, bestSpec: 99.7, bestNote: "CMV in CSF may represent incidental shedding in immunocompetent patients.", bestRefs: ["leber"],
+    prevAll: 0.3, prevYoung: 0.4, prevOlder: 0.2, prevRange: "0.1–0.5%",
+    prevNote: "CMV CNS disease primarily in immunocompromised and congenital infection.",
+    prevRefs: ["schnuriger"],
+    treatment: "Immunocompromised: IV ganciclovir → valganciclovir. Congenital: IV ganciclovir → oral valganciclovir × 6 mo. Immunocompetent: often no specific treatment.",
+    treatmentRoute: "IV → oral (if treating)", canDischarge: false,
+    dischargeNote: "Most warrant admission for workup. In immunocompetent children, CMV in CSF is often incidental.",
+    guidelineRefs: [],
+    empiricAbx: "If CMV is the only pathogen detected and bacterial meningitis excluded (negative Gram stain, cultures, BMS score 0), antibiotics may be discontinued.",
+    empiricAntiviral: "Do NOT start ganciclovir empirically in immunocompetent children. Consult ID. In immunocompromised, start IV ganciclovir pending workup.",
+    importantNotes: "Detection does not necessarily mean disease. Quantitative CMV PCR may help distinguish disease from shedding.",
+    pedNotes: "Consider congenital CMV in infants <3 mo. In transplant/oncology patients, CMV encephalitis is serious."
+  },
+  {
+    id: "ev", name: "Enterovirus", category: "virus", categoryLabel: "RNA Virus (Picornaviridae)", amxIndicated: false, amxLabel: null,
+    fdaSens: 95.7, fdaSpec: 99.8, fdaNote: "44/46 detected (95.7%); 2 FP (99.8%). Two FN confirmed by comparator.", fdaRefs: ["leber","fda"],
+    trujilloSens: 93, trujilloSpec: 99.4, trujilloNote: "19 studies, n=11,351", trujilloRefs: ["trujillo"],
+    bestSens: 94, bestSpec: 99.5, bestNote: "Consistent high performance. Most extensively validated target. Cross-reactivity with rhinovirus noted.", bestRefs: ["leber","trujillo","tansarli"],
+    prevAll: 5.0, prevYoung: 17.7, prevOlder: 6.6, prevRange: "2–18%",
+    prevNote: "MOST COMMON pathogen. 17.7% in ≤3 mo, 6.6% in 3mo–15yr (Schnuriger). Highly seasonal (summer/fall). Up to 41% in febrile infants <3mo during EV season.",
+    prevRefs: ["schnuriger","archimbaud"],
+    treatment: "Supportive care only. No antivirals for immunocompetent. IVIG considered in severe neonatal disease or agammaglobulinemia.",
+    treatmentRoute: "Supportive (oral)", canDischarge: true,
+    dischargeNote: "YES — well-appearing children who tolerate oral fluids: discharge with return precautions.\n\nEvidence:\n• London multicenter 2013–2023 (n=243): 95.6% full recovery in infants <3 mo\n• Archimbaud 2013: faster EV PCR → shorter LOS & abx duration\n• French study: abx 1.9d (EV+) vs 4.1d (EV−), p<0.001\n\nCautions:\n• Neonates <28d: consider observation even if EV+\n• 29–60d: discharge if well-appearing, afebrile, feeding well, reliable f/u 24–48 hrs",
+    guidelineRefs: ["who"],
+    empiricAbx: "DISCONTINUE antibiotics. EV meningitis is the strongest indication for safe antibiotic de-escalation after ME panel result. Multiple studies show reduced LOS and abx duration with no adverse outcomes.",
+    empiricAntiviral: "Discontinue acyclovir. No antiviral treatment indicated.",
+    importantNotes: "Single most impactful positive result for clinical management. Does NOT subtype (EV71, EV-D68 cause more severe disease but are rare).",
+    pedNotes: "EV71/EV-D68 can cause encephalitis or acute flaccid myelitis but are uncommon. Vast majority of EV meningitis is benign and self-limited."
+  },
+  {
+    id: "hsv1", name: "HSV-1", category: "virus", categoryLabel: "DNA Virus (Herpesviridae)", amxIndicated: true, amxLabel: "Antiviral indicated",
+    fdaSens: 100, fdaSpec: 99.8, fdaNote: "11/11 detected; 3 FP (99.8%).", fdaRefs: ["leber","fda"],
+    trujilloSens: 80, trujilloSpec: 99.5, trujilloNote: "SUBOPTIMAL sensitivity — as low as 51% in some studies", trujilloRefs: ["trujillo"],
+    bestSens: 85, bestSpec: 99.5, bestNote: "VARIABLE (51–100%). NEGATIVE result does NOT safely rule out HSV encephalitis.", bestRefs: ["trujillo","schnuriger","leber"],
+    prevAll: 0.5, prevYoung: 0.3, prevOlder: 0.6, prevRange: "0.2–1.0%",
+    prevNote: "HSV-1 causes ~85% of sporadic encephalitis beyond neonatal period.",
+    prevRefs: ["schnuriger","cruz"],
+    treatment: "IV acyclovir 20 mg/kg q8h (neonates) or 10 mg/kg q8h (>3 mo) × 21 days (neonates/encephalitis) or 14 days (meningitis). Oral suppressive × 6 mo in neonates.",
+    treatmentRoute: "IV only", canDischarge: false,
+    dischargeNote: "NEVER discharge. Untreated mortality >70%. Even treated: mortality ~15–20% for encephalitis; >50% survivors have sequelae.",
+    guidelineRefs: ["idsa"],
+    empiricAbx: "Can discontinue antibiotics once HSV confirmed and bacterial meningitis excluded. Focus on IV acyclovir.",
+    empiricAntiviral: "CONTINUE IV acyclovir × full course (14–21 days). Do not stop early. Oral suppressive therapy × 6 months for neonates after IV course.",
+    importantNotes: "CRITICAL SAFETY: If clinical suspicion present (fever, AMS, focal neuro, temporal lobe on MRI), do NOT stop acyclovir based on negative panel. Send confirmatory standalone HSV PCR. BioFire sensitivity for HSV-1 may be as low as 51%.",
+    pedNotes: "Beyond neonatal period: focal neuro findings, behavioral changes, temporal lobe involvement. Panel alone should not drive treatment decisions."
+  },
+  {
+    id: "hsv2", name: "HSV-2", category: "virus", categoryLabel: "DNA Virus (Herpesviridae)", amxIndicated: true, amxLabel: "Antiviral indicated",
+    fdaSens: 100, fdaSpec: 99.9, fdaNote: "29/29 detected; 1 FP. Best-validated HSV target.", fdaRefs: ["leber","fda"],
+    trujilloSens: 97, trujilloSpec: 99.8, trujilloNote: "High sensitivity", trujilloRefs: ["trujillo"],
+    bestSens: 97, bestSpec: 99.9, bestNote: "Better validated than HSV-1 (more positive cases).", bestRefs: ["leber","trujillo"],
+    prevAll: 1.0, prevYoung: 1.5, prevOlder: 0.5, prevRange: "0.5–2.0%",
+    prevNote: "HSV-2 causes ~75% of neonatal HSV. 0.42% in infants <60d evaluated for CNS infection (Cruz 2018, n=26,533).",
+    prevRefs: ["cruz","schnuriger"],
+    treatment: "IV acyclovir 20 mg/kg q8h (neonates) or 10 mg/kg q8h (children) × 14–21 days. Oral suppressive × 6 mo in neonates.",
+    treatmentRoute: "IV only", canDischarge: false,
+    dischargeNote: "Admission mandatory. Neonatal HSV is a medical emergency.",
+    guidelineRefs: ["idsa"],
+    empiricAbx: "Discontinue antibiotics once HSV confirmed and bacterial meningitis excluded.",
+    empiricAntiviral: "CONTINUE IV acyclovir × full course. Oral suppressive therapy × 6 months for neonates.",
+    importantNotes: "HSV-2 can cause benign recurrent meningitis (Mollaret) in older children/adolescents—managed differently. Initial presentation always warrants admission.",
+    pedNotes: "In neonates: SEM, CNS, or disseminated disease. Check for vesicles, hepatitis, coagulopathy. Disseminated has highest mortality."
+  },
+  {
+    id: "hhv6", name: "HHV-6", category: "virus", categoryLabel: "DNA Virus (Herpesviridae)", amxIndicated: false, amxLabel: null,
+    fdaSens: 85.7, fdaSpec: 99.6, fdaNote: "6/7 detected (85.7%); 7 FP (99.6%). LOWEST sens, HIGHEST FP rate on panel.", fdaRefs: ["leber","fda"],
+    trujilloSens: null, trujilloSpec: null, trujilloNote: "Limited data",
+    bestSens: 85, bestSpec: 99, bestNote: "MOST PROBLEMATIC TARGET. ciHHV-6 in ~1% of population → always positive. NPA as low as 50% in some studies.", bestRefs: ["leber","perera"],
+    prevAll: 1.8, prevYoung: 1.0, prevOlder: 2.5, prevRange: "1–3%",
+    prevNote: "3.2% in Perera 2026. But ~1% of people have chromosomally integrated HHV-6 (ciHHV-6) and will always test positive. True disease prevalence is lower.",
+    prevRefs: ["perera","schnuriger"],
+    treatment: "Immunocompetent: no treatment (roseola is self-limited). Immunocompromised: IV ganciclovir or foscarnet if true CNS disease.",
+    treatmentRoute: "Supportive (immunocompetent)", canDischarge: true,
+    dischargeNote: "Immunocompetent children: most results are clinically insignificant.\n\n• Discharge with follow-up if clinically well\n• Order whole blood qPCR to rule out ciHHV-6\n• Immunocompromised: admit for further workup",
+    guidelineRefs: [],
+    empiricAbx: "If HHV-6 only pathogen and bacterial meningitis excluded (BMS 0, neg Gram stain, clinically well), discontinue antibiotics.",
+    empiricAntiviral: "Discontinue acyclovir in immunocompetent children—acyclovir has poor activity against HHV-6. If immunocompromised, consult ID re: ganciclovir/foscarnet.",
+    importantNotes: "Combination of lower sensitivity, higher FP rate, and ciHHV-6 confounder means clinical correlation essential. Many institutions have HHV-6-specific diagnostic stewardship.",
+    pedNotes: "Primary HHV-6 (roseola) peaks 6–15 mo. In febrile seizures + HHV-6 CSF, the HHV-6 likely caused fever, not necessarily encephalitis."
+  },
+  {
+    id: "hpev", name: "Human Parechovirus", category: "virus", categoryLabel: "RNA Virus (Picornaviridae)", amxIndicated: false, amxLabel: null,
+    fdaSens: 100, fdaSpec: 100, fdaNote: "4/4 detected; 0 FP. Small n.", fdaRefs: ["leber","fda"],
+    trujilloSens: null, trujilloSpec: null, trujilloNote: "Limited data",
+    bestSens: 100, bestSpec: 99.9, bestNote: "Excellent but wide CIs due to small n.", bestRefs: ["leber"],
+    prevAll: 2.0, prevYoung: 4.0, prevOlder: 0.5, prevRange: "1–5%",
+    prevNote: "4.0% in ≤3 mo (Schnuriger). Primarily HPeV-3 in infants <3 mo. Seasonal, biennial.",
+    prevRefs: ["schnuriger"],
+    treatment: "Supportive care. No antivirals. IVIG considered in severe neonatal disease (limited evidence).",
+    treatmentRoute: "Supportive", canDischarge: true,
+    dischargeNote: "CONDITIONAL — more cautious than enterovirus:\n\n• Well-appearing >28d feeding well: discharge with 24–48h follow-up\n• Neonates <28d: consider observation\n• HPeV-3: white matter injury on MRI in ~14% (Britton 2016)\n\nCSF often shows NO pleocytosis despite true infection—don't be falsely reassured by normal cell counts.",
+    guidelineRefs: [],
+    empiricAbx: "Discontinue antibiotics once HPeV confirmed and bacterial meningitis excluded. HPeV often presents with NORMAL CSF—the ME panel is particularly valuable here.",
+    empiricAntiviral: "Discontinue acyclovir. No antiviral indicated.",
+    importantNotes: "UNIQUE: CSF often shows NO pleocytosis despite true CNS infection. Traditional CSF parameters may be falsely reassuring.",
+    pedNotes: "HPeV-3 most virulent. Sepsis-like illness + normal CSF is characteristic. MRI if encephalitic features. Neurodevelopmental follow-up for infants <3 mo."
+  },
+  {
+    id: "vzv", name: "VZV", category: "virus", categoryLabel: "DNA Virus (Herpesviridae)", amxIndicated: true, amxLabel: "Antiviral indicated",
+    fdaSens: 100, fdaSpec: 100, fdaNote: "4/4 detected; 0 FP. Small n.", fdaRefs: ["leber","fda"],
+    trujilloSens: null, trujilloSpec: null, trujilloNote: "Limited data",
+    bestSens: 100, bestSpec: 99.5, bestNote: "Occasional FPs in real-world studies.", bestRefs: ["leber"],
+    prevAll: 0.3, prevYoung: 0.1, prevOlder: 0.4, prevRange: "0.1–0.5%",
+    prevNote: "Rare in vaccinated children. More common in immunocompromised.",
+    prevRefs: ["schnuriger"],
+    treatment: "IV acyclovir 10 mg/kg q8h × 7–14 days. Oral valacyclovir potentially for mild meningitis in immunocompetent adolescents.",
+    treatmentRoute: "IV (initially)", canDischarge: false,
+    dischargeNote: "Generally admit for IV acyclovir.",
+    guidelineRefs: ["idsa"],
+    empiricAbx: "Discontinue antibiotics once VZV confirmed and bacterial meningitis excluded.",
+    empiricAntiviral: "Continue/start IV acyclovir. Acyclovir has good activity against VZV.",
+    importantNotes: "VZV can cause meningitis, encephalitis, vasculopathy, and cerebellitis. Check vaccination history.",
+    pedNotes: "VZV cerebellitis (acute cerebellar ataxia) is most common CNS complication of varicella. Vasculopathy can cause stroke."
+  },
+  {
+    id: "crypto", name: "Cryptococcus", category: "yeast", categoryLabel: "Yeast (Fungal)", amxIndicated: true, amxLabel: "Antifungal indicated",
+    fdaSens: 100, fdaSpec: 99.8, fdaNote: "2/2 detected (C. gattii only); 3 FP. Some institutions don't report Crypto ME results.", fdaRefs: ["leber","fda"],
+    trujilloSens: null, trujilloSpec: null, trujilloNote: "Limited data",
+    bestSens: 89, bestSpec: 99.8, bestNote: "PPV 88.9% in Myint 2025. Sensitivity drops to 29% at low fungal burdens (<100 CFU/mL).", bestRefs: ["myint"],
+    prevAll: 0.05, prevYoung: 0.01, prevOlder: 0.05, prevRange: "<0.1%",
+    prevNote: "Extremely rare in immunocompetent children. Primarily HIV/AIDS (CD4 <100).",
+    prevRefs: ["schnuriger"],
+    treatment: "Induction: IV amphotericin B + flucytosine × 2 wks. Consolidation: fluconazole × 8 wks. Maintenance: fluconazole long-term.",
+    treatmentRoute: "IV → oral", canDischarge: false,
+    dischargeNote: "Admission mandatory. Monitor ICP. High mortality if untreated.",
+    guidelineRefs: ["who"],
+    empiricAbx: "Antibiotics not indicated for fungal meningitis. Discontinue empiric ceftriaxone/vancomycin once Crypto confirmed and bacterial excluded.",
+    empiricAntiviral: "Discontinue acyclovir. Start antifungal therapy.",
+    importantNotes: "False positives reported. Confirm with CrAg and/or India ink. If positive in healthy child, strongly suspect FP.",
+    pedNotes: "Exceedingly rare in immunocompetent children. C. gattii can cause disease in immunocompetent (Pacific NW, Australia)."
+  }
+];
 
-  const score = (gram ? 2 : 0) + (csf_anc ? 1 : 0) + (csf_prot ? 1 : 0) + (peri_anc ? 1 : 0) + (seizure ? 1 : 0);
-  const lowRisk = score === 0;
+function calculatePPVNPV(sens, spec, prev) {
+  if (sens == null || spec == null || prev == null) return { ppv: null, npv: null };
+  const s = sens/100, p = spec/100, r = prev/100;
+  const ppv = (s*r)/(s*r+(1-p)*(1-r));
+  const npv = (p*(1-r))/(p*(1-r)+(1-s)*r);
+  return { ppv: ppv*100, npv: npv*100 };
+}
 
+const catCol = {
+  bacteria: { bg:"#FEE2E2", border:"#DC2626", text:"#991B1B", accent:"#EF4444" },
+  virus: { bg:"#DBEAFE", border:"#2563EB", text:"#1E3A5F", accent:"#3B82F6" },
+  yeast: { bg:"#FEF3C7", border:"#D97706", text:"#78350F", accent:"#F59E0B" }
+};
+const sf = "system-ui,-apple-system,sans-serif";
+
+function BmsCalc() {
+  const [gram,setGram]=useState(false);
+  const [csfAnc,setCsfAnc]=useState(false);
+  const [csfProt,setCsfProt]=useState(false);
+  const [periAnc,setPeriAnc]=useState(false);
+  const [seizure,setSeizure]=useState(false);
+  const score=(gram?2:0)+(csfAnc?1:0)+(csfProt?1:0)+(periAnc?1:0)+(seizure?1:0);
+  const low=score===0;
   return (
-    <div style={{ marginTop: 16 }}>
-      <h3 style={{ fontSize: 16, fontWeight: 700, margin: "0 0 6px", fontFamily: sf }}>Bacterial Meningitis Score (Nigrovic)</h3>
-      <p style={{ fontSize: 11, color: "#666", margin: "0 0 12px" }}>
-        For children 29 days–19 yrs with CSF pleocytosis (WBC ≥10). NOT validated for: age &lt;29 days, immunosuppressed, VP shunt, recent neurosurgery, concurrent bacterial infection, or pre-treated with antibiotics.
-        <span style={{ marginLeft: 4 }}><RefLink id="nigrovic_meta" /></span>
-      </p>
+    <div style={{marginTop:16}}>
+      <h3 style={{fontSize:15,fontWeight:700,margin:"0 0 4px",fontFamily:sf}}>Bacterial Meningitis Score (BMS)</h3>
+      <p style={{fontSize:11,color:"#666",margin:"0 0 10px"}}>Ages 29d–19yr with CSF WBC ≥10. NOT for: &lt;29d, immunosuppressed, VP shunt, neurosurgery, pretreated with abx. <RefLink id="nigrovic_meta" /> <RefLink id="nigrovic_orig" /></p>
       {[
-        { label: "Positive CSF Gram stain", val: gram, set: setGram, pts: 2 },
-        { label: "CSF ANC ≥1,000 cells/µL", val: csf_anc, set: setCsfAnc, pts: 1 },
-        { label: "CSF protein ≥80 mg/dL", val: csf_prot, set: setCsfProt, pts: 1 },
-        { label: "Peripheral blood ANC ≥10,000 cells/µL", val: peri_anc, set: setPeriAnc, pts: 1 },
-        { label: "Seizure at or prior to presentation", val: seizure, set: setSeizure, pts: 1 },
-      ].map(item => (
-        <label key={item.label} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", marginBottom: 4, borderRadius: 6, background: item.val ? "#FEF3C7" : "#f9fafb", cursor: "pointer", fontSize: 13, fontFamily: sf, border: "1px solid #e5e7eb" }}>
-          <input type="checkbox" checked={item.val} onChange={() => item.set(!item.val)} style={{ width: 18, height: 18, accentColor: "#D97706" }} />
-          <span style={{ flex: 1 }}>{item.label}</span>
-          <span style={{ fontSize: 11, color: "#999", fontWeight: 600 }}>+{item.pts}</span>
+        {label:"Positive CSF Gram stain",val:gram,set:setGram,pts:2},
+        {label:"CSF ANC ≥1,000 cells/µL",val:csfAnc,set:setCsfAnc,pts:1},
+        {label:"CSF protein ≥80 mg/dL",val:csfProt,set:setCsfProt,pts:1},
+        {label:"Peripheral blood ANC ≥10,000 cells/µL",val:periAnc,set:setPeriAnc,pts:1},
+        {label:"Seizure at or prior to presentation",val:seizure,set:setSeizure,pts:1},
+      ].map(it=>(
+        <label key={it.label} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",marginBottom:4,borderRadius:6,background:it.val?"#FEF3C7":"#f9fafb",cursor:"pointer",fontSize:13,fontFamily:sf,border:"1px solid #e5e7eb"}}>
+          <input type="checkbox" checked={it.val} onChange={()=>it.set(!it.val)} style={{width:18,height:18,accentColor:"#D97706"}} />
+          <span style={{flex:1}}>{it.label}</span>
+          <span style={{fontSize:11,color:"#999",fontWeight:600}}>+{it.pts}</span>
         </label>
       ))}
-      <div style={{ marginTop: 14, padding: 16, borderRadius: 10, border: `2px solid ${lowRisk ? "#059669" : "#DC2626"}`, background: lowRisk ? "#D1FAE5" : "#FEE2E2" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontSize: 14, fontWeight: 700, fontFamily: sf, color: lowRisk ? "#065F46" : "#991B1B" }}>
-            Score: {score} / 6 — {lowRisk ? "LOW RISK for bacterial meningitis" : "NOT low risk — consider bacterial meningitis"}
-          </span>
-        </div>
-        <div style={{ fontSize: 12, marginTop: 8, color: lowRisk ? "#065F46" : "#991B1B", lineHeight: 1.6 }}>
-          {lowRisk ? (
-            <>Score of 0 → Very low risk of bacterial meningitis. Meta-analysis (8 studies, n=4,896): sensitivity 99.3% (95% CI 98.7–99.7%), NPV 99.7% (99.3–99.9%). Consider withholding/discontinuing empiric antibiotics. BUT: use caution in infants &lt;60 days (sensitivity lower in this group — Rees 2019).</>
-          ) : (
-            <>Score ≥1 → Cannot rule out bacterial meningitis with this score alone. Continue empiric antibiotics and admit pending cultures. Specificity 62.1% — many children with score ≥1 will have viral meningitis, but the score is designed for high sensitivity at the expense of specificity.</>
-          )}
+      <div style={{marginTop:12,padding:14,borderRadius:10,border:`2px solid ${low?"#059669":"#DC2626"}`,background:low?"#D1FAE5":"#FEE2E2"}}>
+        <div style={{fontSize:14,fontWeight:700,fontFamily:sf,color:low?"#065F46":"#991B1B"}}>Score: {score}/6 — {low?"LOW RISK":"NOT low risk — treat as bacterial meningitis"}</div>
+        <div style={{fontSize:12,marginTop:6,color:low?"#065F46":"#991B1B",lineHeight:1.6}}>
+          {low ? <>Score 0 → Very low risk. Meta-analysis (8 studies, n=4,896): sensitivity 99.3%, NPV 99.7%. Consider withholding/stopping empiric abx. Caution in &lt;60d (sensitivity lower — <RefLink id="rees_bms" />).</> : <>Score ≥1 → Cannot rule out bacterial meningitis. Continue empiric abx and admit pending cultures. Specificity only 62%—many will have viral meningitis, but score prioritizes sensitivity.</>}
         </div>
       </div>
     </div>
   );
 }
 
-function BioFireMEPanelTool() {
-  const [selectedPathogen, setSelectedPathogen] = useState(null);
-  const [customPrevalence, setCustomPrevalence] = useState(null);
-  const [activeTab, setActiveTab] = useState("test");
-  const [showSources, setShowSources] = useState(false);
-  const [showBms, setShowBms] = useState(false);
+function MseCalc() {
+  const [pct,setPct]=useState(false);
+  const [csfProt,setCsfProt]=useState(false);
+  const [crp,setCrp]=useState(false);
+  const [csfAnc,setCsfAnc]=useState(false);
+  const score=(pct?3:0)+(csfProt?2:0)+(crp?1:0)+(csfAnc?1:0);
+  const low=score===0;
+  return (
+    <div style={{marginTop:16}}>
+      <h3 style={{fontSize:15,fontWeight:700,margin:"0 0 4px",fontFamily:sf}}>Meningitis Score for Emergencies (MSE)</h3>
+      <p style={{fontSize:11,color:"#666",margin:"0 0 10px"}}>Requires procalcitonin and CRP (not always available in all EDs). <RefLink id="mintegi" /></p>
+      {[
+        {label:"Procalcitonin >1.2 ng/mL",val:pct,set:setPct,pts:3},
+        {label:"CSF protein >80 mg/dL",val:csfProt,set:setCsfProt,pts:2},
+        {label:"CRP >40 mg/L",val:crp,set:setCrp,pts:1},
+        {label:"CSF ANC >1,000 cells/mm³",val:csfAnc,set:setCsfAnc,pts:1},
+      ].map(it=>(
+        <label key={it.label} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",marginBottom:4,borderRadius:6,background:it.val?"#EDE9FE":"#f9fafb",cursor:"pointer",fontSize:13,fontFamily:sf,border:"1px solid #e5e7eb"}}>
+          <input type="checkbox" checked={it.val} onChange={()=>it.set(!it.val)} style={{width:18,height:18,accentColor:"#7C3AED"}} />
+          <span style={{flex:1}}>{it.label}</span>
+          <span style={{fontSize:11,color:"#999",fontWeight:600}}>+{it.pts}</span>
+        </label>
+      ))}
+      <div style={{marginTop:12,padding:14,borderRadius:10,border:`2px solid ${low?"#059669":"#7C3AED"}`,background:low?"#D1FAE5":"#EDE9FE"}}>
+        <div style={{fontSize:14,fontWeight:700,fontFamily:sf,color:low?"#065F46":"#5B21B6"}}>Score: {score}/7 — {low?"LOW RISK (MSE 0)":"NOT low risk — treat as bacterial"}</div>
+        <div style={{fontSize:12,marginTop:6,color:low?"#065F46":"#5B21B6",lineHeight:1.6}}>
+          {low ? <>MSE 0 → sensitivity 100% (95% CI 95–100%), specificity 83.2%, NPV 100%. Higher specificity than BMS. Consider withholding abx if procalcitonin and CRP available.</> : <>MSE ≥1 → Cannot rule out bacterial meningitis. Continue empiric therapy.</>}
+        </div>
+      </div>
+    </div>
+  );
+}
 
-  const pathogen = PATHOGENS.find(p => p.id === selectedPathogen);
-  const prevalence = customPrevalence !== null ? customPrevalence : (pathogen?.prevalenceEstimate || 1);
+function App() {
+  const [selId,setSelId]=useState(null);
+  const [custPrev,setCustPrev]=useState(null);
+  const [tab,setTab]=useState("ppv");
+  const [showSrc,setShowSrc]=useState(false);
+  const [showBms,setShowBms]=useState(false);
+  const [ageGroup,setAgeGroup]=useState("all"); // "all","young","older"
 
-  const predictiveValues = useMemo(() => {
-    if (!pathogen) return {};
-    const fda = calculatePPVNPV(pathogen.fdaSensitivity, pathogen.fdaSpecificity, prevalence);
-    const best = calculatePPVNPV(pathogen.bestEstimateSensitivity, pathogen.bestEstimateSpecificity, prevalence);
-    return { fda, best };
-  }, [pathogen, prevalence]);
+  const p = PATHOGENS.find(x=>x.id===selId);
+  const basePrev = p ? (ageGroup==="young" ? p.prevYoung : ageGroup==="older" ? p.prevOlder : p.prevAll) : 1;
+  const prevalence = custPrev!==null ? custPrev : basePrev;
+  const pv = useMemo(()=>{
+    if(!p) return {};
+    return { best: calculatePPVNPV(p.bestSens,p.bestSpec,prevalence), fda: calculatePPVNPV(p.fdaSens,p.fdaSpec,prevalence) };
+  },[p,prevalence]);
 
-  const bacteria = PATHOGENS.filter(p => p.category === "bacteria");
-  const viruses = PATHOGENS.filter(p => p.category === "virus");
-  const yeasts = PATHOGENS.filter(p => p.category === "yeast");
+  const bacteria=PATHOGENS.filter(x=>x.category==="bacteria");
+  const viruses=PATHOGENS.filter(x=>x.category==="virus");
+  const yeasts=PATHOGENS.filter(x=>x.category==="yeast");
 
   return (
-    <div style={{ fontFamily: "'Source Serif 4', Georgia, serif", maxWidth: 960, margin: "0 auto", padding: "20px 16px", color: "#1a1a2e" }}>
-      <div style={{ textAlign: "center", marginBottom: 32, borderBottom: "3px solid #1a1a2e", paddingBottom: 20 }}>
-        <h1 style={{ fontSize: 26, fontWeight: 700, margin: 0, letterSpacing: "-0.5px" }}>BioFire FilmArray ME Panel</h1>
-        <p style={{ fontSize: 15, color: "#555", margin: "6px 0 0", fontStyle: "italic" }}>Clinical Decision Support — Pediatric Emergency Medicine</p>
-        <p style={{ fontSize: 11, color: "#999", margin: "8px auto 0", maxWidth: 640 }}>
-          Educational tool only. Not a substitute for clinical judgment. ME Panel results are not intended as sole basis for diagnosis, treatment, or management decisions (FDA). Always use in conjunction with clinical findings, CSF parameters, and culture.
-        </p>
+    <div style={{fontFamily:"'Source Serif 4',Georgia,serif",maxWidth:960,margin:"0 auto",padding:"20px 16px",color:"#1a1a2e"}}>
+      {/* Header — Option B */}
+      <div style={{textAlign:"center",marginBottom:28,paddingBottom:0}}>
+        <h1 style={{fontSize:22,fontWeight:500,margin:0,lineHeight:1.3,fontFamily:"'Source Serif 4',Georgia,serif"}}>Meningitis/Encephalitis Syndromic Panel{"\n"}Decision Support Tool</h1>
+        <p style={{fontSize:13,color:"#666",margin:"6px 0 0",fontFamily:sf}}>Clinical decision support for the pediatric emergency room</p>
+        <p style={{fontSize:11,color:"#999",margin:"12px auto 0",maxWidth:660,lineHeight:1.5}}>Educational tool only. Not a substitute for clinical judgment. BIOFIRE® FILMARRAY® Meningitis/Encephalitis (ME) Panel results are not the sole basis for diagnosis or treatment (FDA). Always use with clinical findings, CSF parameters, and culture. Estimates based on available cohort and observational studies, may not be appropriate for your practice location and patient population.</p>
+        <div style={{width:60,height:2,background:"#ccc",margin:"14px auto 0",borderRadius:1}} />
+      </div>
+
+      {/* Age Group Selector */}
+      <div style={{marginBottom:20,padding:"14px 18px",background:"#E6F1FB",borderRadius:10,border:"1px solid #B5D4F4"}}>
+        <h2 style={{fontSize:12,textTransform:"uppercase",letterSpacing:1.5,color:"#1E3A5F",marginBottom:10,fontFamily:sf,fontWeight:600}}>Patient age group <span style={{fontWeight:400,color:"#5a8abb",fontSize:11,letterSpacing:0,textTransform:"none",marginLeft:4}}>— adjusts prevalence estimates and predictive values</span></h2>
+        <div style={{display:"flex",gap:8}}>
+          {[{id:"young",label:"≤ 3 months"},{id:"older",label:"3 mo – 15 yr"},{id:"all",label:"All pediatric"}].map(a=>(
+            <button key={a.id} onClick={()=>{setAgeGroup(a.id);setCustPrev(null);}}
+              style={{flex:1,padding:"10px 16px",borderRadius:8,border:`1.5px solid ${ageGroup===a.id?"#185FA5":"#B5D4F4"}`,background:ageGroup===a.id?"#185FA5":"#fff",color:ageGroup===a.id?"#fff":"#1E3A5F",fontSize:14,fontWeight:500,cursor:"pointer",fontFamily:sf,textAlign:"center",transition:"all 0.15s"}}>
+              {a.label}
+            </button>
+          ))}
+        </div>
+        <div style={{fontSize:10,color:"#5a8abb",marginTop:8,fontFamily:sf}}>Prevalence data from Schnuriger 2022 (Paris, n=1,744 pediatric CSF specimens)</div>
       </div>
 
       {/* Pathogen Selection */}
-      <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: 1.5, color: "#666", marginBottom: 12, fontFamily: sf, fontWeight: 600 }}>Select Detected Pathogen</h2>
-        {[
-          { label: "Bacteria", items: bacteria, cat: "bacteria" },
-          { label: "Viruses", items: viruses, cat: "virus" },
-          { label: "Yeast", items: yeasts, cat: "yeast" }
-        ].map(g => (
-          <div key={g.cat} style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 10, fontWeight: 600, color: catCol[g.cat].text, marginBottom: 6, textTransform: "uppercase", letterSpacing: 1, fontFamily: sf }}>{g.label}</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {g.items.map(p => {
-                const sel = selectedPathogen === p.id;
-                const c = catCol[g.cat];
-                return (
-                  <button key={p.id} onClick={() => { setSelectedPathogen(p.id); setCustomPrevalence(null); setActiveTab("test"); setShowBms(false); }}
-                    style={{ padding: "7px 14px", borderRadius: 6, border: `2px solid ${sel ? c.border : "#ddd"}`, background: sel ? c.bg : "#fff", color: sel ? c.text : "#444", fontWeight: sel ? 700 : 500, fontSize: 13, cursor: "pointer", fontFamily: sf, transition: "all 0.15s" }}>
-                    {p.name}
-                  </button>
-                );
-              })}
+      <div style={{marginBottom:20,padding:"14px 18px",background:"#FEFCE8",borderRadius:10,border:"1px solid #FDE68A"}}>
+        <h2 style={{fontSize:12,textTransform:"uppercase",letterSpacing:1.5,color:"#78350F",marginBottom:10,fontFamily:sf,fontWeight:600}}>Select Detected Pathogen</h2>
+        {[{label:"Bacteria",items:bacteria,cat:"bacteria"},{label:"Viruses",items:viruses,cat:"virus"},{label:"Yeast",items:yeasts,cat:"yeast"}].map(g=>(
+          <div key={g.cat} style={{marginBottom:10}}>
+            <div style={{fontSize:10,fontWeight:600,color:catCol[g.cat].text,marginBottom:5,textTransform:"uppercase",letterSpacing:1,fontFamily:sf}}>{g.label}</div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+              {g.items.map(x=>{const sel=selId===x.id;const c=catCol[g.cat];return(
+                <button key={x.id} onClick={()=>{setSelId(x.id);setCustPrev(null);setTab("ppv");setShowBms(false);}}
+                  style={{padding:"6px 12px",borderRadius:6,border:`2px solid ${sel?c.border:"#ddd"}`,background:sel?c.bg:"#fff",color:sel?c.text:"#444",fontWeight:sel?700:500,fontSize:12,cursor:"pointer",fontFamily:sf}}>{x.name}</button>
+              );})}
             </div>
           </div>
         ))}
-        {/* All Negative button */}
-        <div style={{ marginTop: 8 }}>
-          <div style={{ fontSize: 10, fontWeight: 600, color: "#555", marginBottom: 6, textTransform: "uppercase", letterSpacing: 1, fontFamily: sf }}>Panel Negative</div>
-          <button onClick={() => { setSelectedPathogen(null); setShowBms(true); }}
-            style={{ padding: "7px 14px", borderRadius: 6, border: `2px solid ${showBms && !selectedPathogen ? "#6B7280" : "#ddd"}`, background: showBms && !selectedPathogen ? "#F3F4F6" : "#fff", fontWeight: showBms && !selectedPathogen ? 700 : 500, fontSize: 13, cursor: "pointer", fontFamily: sf, color: "#444" }}>
+        <div style={{marginTop:6}}>
+          <div style={{fontSize:10,fontWeight:600,color:"#555",marginBottom:5,textTransform:"uppercase",letterSpacing:1,fontFamily:sf}}>Panel Negative</div>
+          <button onClick={()=>{setSelId(null);setShowBms(true);}}
+            style={{padding:"6px 12px",borderRadius:6,border:`2px solid ${showBms&&!selId?"#6B7280":"#ddd"}`,background:showBms&&!selId?"#F3F4F6":"#fff",fontWeight:showBms&&!selId?700:500,fontSize:12,cursor:"pointer",fontFamily:sf,color:"#444"}}>
             All Negative + CSF Pleocytosis
           </button>
         </div>
       </div>
 
-      {/* BMS Section */}
-      {showBms && !selectedPathogen && (
-        <div style={{ border: "2px solid #6B7280", borderRadius: 12, overflow: "hidden" }}>
-          <div style={{ background: "#F3F4F6", padding: "16px 20px", borderBottom: "2px solid #6B7280" }}>
-            <h2 style={{ margin: 0, fontSize: 20, color: "#1F2937" }}>ME Panel Negative with CSF Pleocytosis</h2>
-            <p style={{ margin: "6px 0 0", fontSize: 12, color: "#6B7280" }}>All 14 targets negative, but CSF WBC ≥10 cells/µL</p>
+      {/* ALL NEGATIVE SECTION */}
+      {showBms && !selId && (
+        <div style={{border:"2px solid #6B7280",borderRadius:12,overflow:"hidden"}}>
+          <div style={{background:"#F3F4F6",padding:"14px 18px",borderBottom:"2px solid #6B7280"}}>
+            <h2 style={{margin:0,fontSize:18,color:"#1F2937",fontFamily:sf}}>ME Panel Negative + CSF Pleocytosis</h2>
           </div>
-          <div style={{ padding: 20 }}>
-            <div style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 16 }}>
-              <strong>Clinical scenario:</strong> A child presents with signs/symptoms of meningitis. LP shows pleocytosis. The BioFire ME panel is entirely negative. What now?
+          <div style={{padding:18}}>
+            <div style={{padding:14,background:"#FEF2F2",border:"1px solid #FECACA",borderRadius:8,fontSize:12,color:"#991B1B",lineHeight:1.6,marginBottom:16}}>
+              <strong>⚠ A negative ME panel does NOT rule out bacterial meningitis.</strong>
+              <br/>• Overall panel sensitivity ~90% (Tansarli 2020: 90%, 95% CI 86–93%) or ~89–92% (Trujillo-Gómez 2022). <RefLinks ids={["tansarli","trujillo"]} />
+              <br/>• Sensitivity for Listeria, N. meningitidis, S. agalactiae is poorly validated (too few cases)
+              <br/>• Pre-treatment with abx can reduce bacterial load below detection threshold
+              <br/>• Always await CSF culture (48+ hrs) before definitively excluding bacterial meningitis
             </div>
-            <div style={{ padding: 14, background: "#FFFBEB", border: "1px solid #FCD34D", borderRadius: 8, fontSize: 12, color: "#78350F", lineHeight: 1.6, marginBottom: 16 }}>
-              <strong>⚠ Key considerations:</strong>
-              <br />• A negative ME panel does NOT rule out bacterial meningitis — the panel's overall sensitivity is ~90% (Tansarli 2020 meta-analysis: 90%, 95% CI 86–93%). <RefLink id="tansarli" />
-              <br />• Pathogens NOT on the panel can cause meningitis (e.g., Mycobacterium tuberculosis, Borrelia burgdorferi, Treponema pallidum, non-K1 E. coli, Staphylococcus spp.)
-              <br />• Pre-treatment with antibiotics can reduce bacterial load below detection threshold
-              <br />• Always await CSF culture results (48+ hrs) before definitively excluding bacterial meningitis
-              <br />• The ME panel sensitivity for specific bacteria (L. monocytogenes, N. meningitidis, S. agalactiae) is poorly validated due to rarity
+
+            {/* Can I stop abx/antivirals? */}
+            <div style={{marginBottom:20}}>
+              <h3 style={{fontSize:14,fontWeight:700,margin:"0 0 8px",fontFamily:sf}}>Can I Stop Empiric Therapy?</h3>
+
+              <div style={{padding:14,background:"#DBEAFE",border:"1px solid #93C5FD",borderRadius:8,fontSize:12,color:"#1E3A5F",lineHeight:1.7,marginBottom:10}}>
+                <strong>Acyclovir:</strong> Evidence supports discontinuation after negative ME panel result in most cases. Median acyclovir duration decreased from 3 days to 2 days after ME panel implementation (p=0.0002). <RefLinks ids={["gutierrez"]} />
+                <br/><br/>
+                <strong>EXCEPTION — Neonates ≤28 days with high clinical suspicion for HSV:</strong> Do NOT stop acyclovir based on negative ME panel alone. BioFire sensitivity for HSV-1 may be as low as 51%. Send surface swabs (mouth, eyes, rectum), blood HSV PCR, LFTs (ALT). Consider repeat LP in 48–72 hrs. <RefLinks ids={["safercare","trujillo"]} />
+              </div>
+
+              <div style={{padding:14,background:"#FEF3C7",border:"1px solid #FCD34D",borderRadius:8,fontSize:12,color:"#78350F",lineHeight:1.7}}>
+                <strong>Antibiotics (ceftriaxone ± vancomycin):</strong> Combine negative ME panel with a clinical decision score:
+                <br/>• Negative ME panel + BMS score 0 → strong evidence to withhold/discontinue empiric abx (while awaiting 48-hr culture)
+                <br/>• Negative ME panel + BMS ≥1 → continue empiric abx pending cultures
+                <br/>• In one study, 31.5% of patients had empiric abx discontinued within 36 hrs of negative ME panel result <RefLinks ids={["broadhurst"]} />
+                <br/>• Always wait for 48-hr culture before definitively stopping abx in any patient where clinical concern persists
+              </div>
             </div>
-            <div style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 12 }}>
-              <strong>The Bacterial Meningitis Score</strong> can help risk-stratify children with CSF pleocytosis and a negative Gram stain. Use it to determine whether empiric antibiotics can be safely withheld in conjunction with the negative ME panel result.
+
+            {/* Pathogens NOT on panel */}
+            <div style={{marginBottom:20}}>
+              <h3 style={{fontSize:14,fontWeight:700,margin:"0 0 8px",fontFamily:sf}}>Pathogens NOT on the Panel — Consider If:</h3>
+              <div style={{padding:14,background:"#f9fafb",border:"1px solid #e5e7eb",borderRadius:8,fontSize:12,lineHeight:1.8}}>
+                <strong>Borrelia burgdorferi (Lyme meningitis)</strong> — Consider in endemic areas (New England, mid-Atlantic, upper Midwest), summer/fall. NOT detected by ME panel. Send Lyme serology. See Rule of 7s below. <RefLinks ids={["cohn_lyme"]} />
+                <br/><strong>Mycobacterium tuberculosis</strong> — Consider if: subacute presentation (days–weeks), TB risk factors (travel, exposure, immigration), basilar meningeal enhancement, low CSF glucose. Send AFB smear/culture and CSF TB PCR (GeneXpert).
+                <br/><strong>Treponema pallidum (neurosyphilis)</strong> — Consider in neonates (congenital) or adolescents. Send CSF VDRL and serum RPR/treponemal test.
+                <br/><strong>Non-K1 E. coli and other gram-negatives</strong> — Panel only detects K1 capsular antigen. Other E. coli strains and gram-negatives (Klebsiella, Pseudomonas) are not covered. CSF culture will identify these.
+                <br/><strong>Staphylococcus spp.</strong> — Not on panel. Consider post-neurosurgical, VP shunt, or endocarditis-related meningitis.
+                <br/><strong>Partially-treated bacterial meningitis</strong> — Antibiotics given before LP can sterilize cultures AND reduce ME panel sensitivity. Maintain high clinical suspicion.
+              </div>
             </div>
-            <BmsCalculator />
+
+            {/* Lyme Rule of 7s */}
+            <div style={{marginBottom:20,padding:14,background:"#ECFDF5",border:"1px solid #6EE7B7",borderRadius:8}}>
+              <h3 style={{fontSize:14,fontWeight:700,margin:"0 0 6px",fontFamily:sf,color:"#065F46"}}>Lyme Meningitis — Rule of 7s</h3>
+              <p style={{fontSize:11,color:"#065F46",margin:"0 0 8px"}}>For use in Lyme-endemic areas when ME panel is negative and Lyme is in the differential. Ages ≥90d–19yr. <RefLink id="cohn_lyme" /></p>
+              <p style={{fontSize:12,lineHeight:1.6,margin:"0 0 6px"}}>
+                A child is classified as <strong>LOW RISK for Lyme meningitis</strong> when ALL THREE of the following are met:
+              </p>
+              <div style={{fontSize:13,lineHeight:1.8,paddingLeft:12}}>
+                • Headache duration &lt;7 days<br/>
+                • CSF mononuclear cells &lt;70% of total WBC<br/>
+                • No 7th (facial) or other cranial nerve palsy
+              </div>
+              <p style={{fontSize:11,color:"#065F46",margin:"8px 0 0",lineHeight:1.5}}>
+                Validation (n=423): sensitivity 96%, specificity 41%. Low-risk children may be considered for outpatient management while awaiting Lyme serology (send Lyme IgM/IgG). If Lyme confirmed: IV ceftriaxone × 14–21 days (or oral doxycycline in &gt;8yr per some protocols).
+              </p>
+            </div>
+
+            {/* BMS and MSE calculators */}
+            <BmsCalc />
+            <MseCalc />
+
+            {/* Meta-analysis comparison */}
+            <div style={{marginTop:20,padding:14,background:"#f3f4f6",border:"1px solid #d1d5db",borderRadius:8,fontSize:11,lineHeight:1.7}}>
+              <strong>Note: Tansarli 2020 vs Trujillo-Gómez 2022 meta-analyses</strong>
+              <br/>These two systematic reviews report slightly different overall estimates:
+              <br/>• <strong>Tansarli 2020</strong>: 8 studies, 3,059 patients. Overall panel: sensitivity 90% (86–93%), specificity 97% (94–99%). Focused on discordant/FP results. <RefLink id="tansarli" />
+              <br/>• <strong>Trujillo-Gómez 2022</strong>: 19 studies, 11,351 patients. Per-pathogen analysis. All bacteria (vs culture): sensitivity 89.5% (81–94%), specificity 97.4% (94–99%). Noted suboptimal sensitivity for HSV-1, Listeria, H. flu, E. coli. Higher specificity (~99%) when using clinical adjudication as reference. <RefLink id="trujillo" />
+              <br/>• <strong>Key difference:</strong> Trujillo-Gómez is larger, more recent, and provides per-pathogen breakdowns. Tansarli focused more on FP/FN adjudication. Both agree on ~90% overall sensitivity and &gt;97% specificity.
+            </div>
           </div>
         </div>
       )}
 
-      {/* Pathogen Detail */}
-      {pathogen && (
-        <div style={{ border: `2px solid ${catCol[pathogen.category].border}`, borderRadius: 12, overflow: "hidden" }}>
-          <div style={{ background: catCol[pathogen.category].bg, padding: "16px 20px", borderBottom: `2px solid ${catCol[pathogen.category].border}` }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+      {/* PATHOGEN DETAIL */}
+      {p && (
+        <div style={{border:"2px solid #d1d5db",borderRadius:12,overflow:"hidden"}}>
+          <div style={{background:"#f3f4f6",padding:"14px 18px",borderBottom:"2px solid #d1d5db"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
               <div>
-                <h2 style={{ margin: 0, fontSize: 22, color: catCol[pathogen.category].text }}>{pathogen.name}</h2>
-                <span style={{ fontSize: 12, color: catCol[pathogen.category].text, opacity: 0.7 }}>{pathogen.categoryLabel}</span>
+                <h2 style={{margin:0,fontSize:20,color:"#1a1a2e"}}>{p.name}</h2>
+                <span style={{fontSize:11,color:"#666"}}>{p.categoryLabel}</span>
               </div>
-              <div style={{
-                padding: "6px 14px", borderRadius: 20, fontWeight: 700, fontSize: 12, fontFamily: sf, textTransform: "uppercase", letterSpacing: 0.5,
-                background: pathogen.canDischarge ? "#D1FAE5" : "#FEE2E2",
-                border: `2px solid ${pathogen.canDischarge ? "#059669" : "#DC2626"}`,
-                color: pathogen.canDischarge ? "#065F46" : "#991B1B"
-              }}>
-                {pathogen.canDischarge ? "↑ Discharge may be appropriate" : "↓ Admission required"}
+              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                {p.amxIndicated && p.amxLabel && (
+                  <div style={{padding:"5px 12px",borderRadius:20,fontWeight:700,fontSize:11,fontFamily:sf,textTransform:"uppercase",letterSpacing:0.5,background:"#FEF3C7",border:"2px solid #D97706",color:"#78350F"}}>
+                    {p.amxLabel}
+                  </div>
+                )}
+                {!p.amxIndicated && p.amxLabel && (
+                  <div style={{padding:"5px 12px",borderRadius:20,fontWeight:700,fontSize:11,fontFamily:sf,textTransform:"uppercase",letterSpacing:0.5,background:"#FEF3C7",border:"2px solid #D97706",color:"#78350F"}}>
+                    {p.amxLabel}
+                  </div>
+                )}
+                <div style={{padding:"5px 12px",borderRadius:20,fontWeight:700,fontSize:11,fontFamily:sf,textTransform:"uppercase",letterSpacing:0.5,background:p.canDischarge?"#D1FAE5":"#FEE2E2",border:`2px solid ${p.canDischarge?"#059669":"#DC2626"}`,color:p.canDischarge?"#065F46":"#991B1B"}}>
+                  {p.canDischarge?"↑ Discharge may be appropriate":"↓ Admission required"}
+                </div>
               </div>
             </div>
           </div>
 
-          <div style={{ display: "flex", borderBottom: "1px solid #e5e7eb", background: "#fafafa" }}>
-            {[{ id: "test", label: "Test Characteristics" }, { id: "ppv", label: "Predictive Value" }, { id: "tx", label: "Treatment & Disposition" }].map(tab => (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                style={{ flex: 1, padding: "12px 8px", border: "none", borderBottom: activeTab === tab.id ? `3px solid ${catCol[pathogen.category].accent}` : "3px solid transparent", background: activeTab === tab.id ? "#fff" : "transparent", fontWeight: activeTab === tab.id ? 700 : 500, fontSize: 13, cursor: "pointer", color: activeTab === tab.id ? catCol[pathogen.category].text : "#666", fontFamily: sf }}>
-                {tab.label}
+          {/* Tabs — PPV first */}
+          <div style={{display:"flex",borderBottom:"1px solid #e5e7eb",background:"#fafafa"}}>
+            {[{id:"ppv",label:"Predictive Value"},{id:"test",label:"Test Characteristics"},{id:"tx",label:"Treatment & Disposition"}].map(t=>(
+              <button key={t.id} onClick={()=>setTab(t.id)}
+                style={{flex:1,padding:"11px 6px",border:"none",borderBottom:tab===t.id?"3px solid #1a1a2e":"3px solid transparent",background:tab===t.id?"#fff":"transparent",fontWeight:tab===t.id?700:500,fontSize:12,cursor:"pointer",color:tab===t.id?"#1a1a2e":"#666",fontFamily:sf}}>
+                {t.label}
               </button>
             ))}
           </div>
 
-          <div style={{ padding: 20 }}>
-            {activeTab === "test" && (
+          <div style={{padding:18}}>
+            {/* PPV TAB */}
+            {tab==="ppv" && (
               <div>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, fontFamily: sf }}>
-                  <thead>
-                    <tr style={{ background: "#f3f4f6" }}>
-                      <th style={{ padding: "10px 12px", textAlign: "left", borderBottom: "2px solid #ddd", fontWeight: 700 }}>Source</th>
-                      <th style={{ padding: "10px 12px", textAlign: "center", borderBottom: "2px solid #ddd", fontWeight: 700 }}>Sens (PPA)</th>
-                      <th style={{ padding: "10px 12px", textAlign: "center", borderBottom: "2px solid #ddd", fontWeight: 700 }}>Spec (NPA)</th>
-                      <th style={{ padding: "10px 12px", textAlign: "left", borderBottom: "2px solid #ddd", fontWeight: 700 }}>Notes</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid #eee", fontWeight: 600 }}>FDA / Leber 2016 <RefLinks ids={pathogen.fdaRefs} /></td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid #eee", textAlign: "center", fontWeight: 700, color: pathogen.fdaSensitivity == null ? "#999" : pathogen.fdaSensitivity >= 95 ? "#059669" : pathogen.fdaSensitivity >= 85 ? "#D97706" : "#DC2626" }}>
-                        {pathogen.fdaSensitivity != null ? `${pathogen.fdaSensitivity}%` : "N/A"}
-                      </td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid #eee", textAlign: "center", fontWeight: 700, color: "#059669" }}>
-                        {pathogen.fdaSpecificity != null ? `${pathogen.fdaSpecificity}%` : "N/A"}
-                      </td>
-                      <td style={{ padding: "10px 12px", borderBottom: "1px solid #eee", fontSize: 11, color: "#666" }}>{pathogen.fdaNote}</td>
-                    </tr>
-                    {pathogen.trujilloSensitivity && (
-                      <tr>
-                        <td style={{ padding: "10px 12px", borderBottom: "1px solid #eee", fontWeight: 600 }}>Trujillo-Gomez 2022 <RefLinks ids={pathogen.trujilloRefs} /></td>
-                        <td style={{ padding: "10px 12px", borderBottom: "1px solid #eee", textAlign: "center", fontWeight: 700, color: pathogen.trujilloSensitivity >= 95 ? "#059669" : pathogen.trujilloSensitivity >= 85 ? "#D97706" : "#DC2626" }}>{pathogen.trujilloSensitivity}%</td>
-                        <td style={{ padding: "10px 12px", borderBottom: "1px solid #eee", textAlign: "center", fontWeight: 700, color: "#059669" }}>{pathogen.trujilloSpecificity}%</td>
-                        <td style={{ padding: "10px 12px", borderBottom: "1px solid #eee", fontSize: 11, color: "#666" }}>{pathogen.trujilloNote}</td>
-                      </tr>
-                    )}
-                    <tr style={{ background: "#f0fdf4" }}>
-                      <td style={{ padding: "10px 12px", fontWeight: 700 }}>Best Estimate <RefLinks ids={pathogen.bestEstimateRefs} /></td>
-                      <td style={{ padding: "10px 12px", textAlign: "center", fontWeight: 700, color: pathogen.bestEstimateSensitivity == null ? "#999" : pathogen.bestEstimateSensitivity >= 95 ? "#059669" : pathogen.bestEstimateSensitivity >= 85 ? "#D97706" : "#DC2626" }}>
-                        {pathogen.bestEstimateSensitivity != null ? `${pathogen.bestEstimateSensitivity}%` : "Unknown"}
-                      </td>
-                      <td style={{ padding: "10px 12px", textAlign: "center", fontWeight: 700, color: "#059669" }}>
-                        {pathogen.bestEstimateSpecificity != null ? `${pathogen.bestEstimateSpecificity}%` : "Unknown"}
-                      </td>
-                      <td style={{ padding: "10px 12px", fontSize: 11, color: "#444", fontWeight: 500 }}>{pathogen.bestEstimateNote}</td>
-                    </tr>
-                  </tbody>
-                </table>
-                {pathogen.additionalNotes && (
-                  <div style={{ marginTop: 16, padding: 14, background: "#FFFBEB", border: "1px solid #FCD34D", borderRadius: 8, fontSize: 12, color: "#78350F", lineHeight: 1.5 }}>
-                    <strong>⚠ Important:</strong> {pathogen.additionalNotes}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === "ppv" && (
-              <div>
-                <div style={{ marginBottom: 20 }}>
-                  <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 8, fontFamily: sf }}>
-                    Pre-test Prevalence: <span style={{ color: catCol[pathogen.category].accent, fontSize: 18 }}>{prevalence.toFixed(1)}%</span>
-                  </label>
-                  <input type="range" min="0.01" max="20" step="0.01" value={prevalence} onChange={e => setCustomPrevalence(parseFloat(e.target.value))} style={{ width: "100%", accentColor: catCol[pathogen.category].accent }} />
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#999", fontFamily: sf }}>
-                    <span>0.01%</span>
-                    <span style={{ cursor: "pointer", color: catCol[pathogen.category].accent, fontWeight: 600 }} onClick={() => setCustomPrevalence(null)}>Reset to estimated ({pathogen.prevalenceEstimate}%)</span>
-                    <span>20%</span>
-                  </div>
-                  <div style={{ marginTop: 8, fontSize: 11, color: "#666", fontStyle: "italic" }}>
-                    Estimated prevalence in pediatric ED CSF: {pathogen.prevalenceRange}. {pathogen.prevalenceNote} <RefLinks ids={pathogen.prevalenceRefs} />
-                  </div>
+                <div style={{marginBottom:6,fontSize:11,color:"#666",fontFamily:sf}}>
+                  Age group: <strong>{ageGroup==="young"?"≤3 months":ageGroup==="older"?"3 mo – 15 yr":"All pediatric"}</strong> — prevalence {basePrev}%
                 </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
-                  {[
-                    { label: "Positive Predictive Value", value: predictiveValues.best?.ppv, desc: "P(true pathogen | positive result)" },
-                    { label: "Negative Predictive Value", value: predictiveValues.best?.npv, desc: "P(truly absent | negative result)" }
-                  ].map((item, i) => (
-                    <div key={i} style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 10, padding: 16, textAlign: "center" }}>
-                      <div style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, color: "#666", marginBottom: 8, fontFamily: sf }}>{item.label}</div>
-                      <div style={{ fontSize: 36, fontWeight: 800, color: item.value == null ? "#999" : item.value >= 90 ? "#059669" : item.value >= 70 ? "#D97706" : "#DC2626", fontFamily: sf }}>
-                        {item.value != null ? `${item.value.toFixed(1)}%` : "N/A"}
-                      </div>
-                      <div style={{ fontSize: 10, color: "#888", marginTop: 6, fontFamily: sf }}>{item.desc}</div>
+                <div style={{marginBottom:18}}>
+                  <label style={{display:"block",fontSize:13,fontWeight:600,marginBottom:6,fontFamily:sf}}>
+                    Pre-test Prevalence: <span style={{color:catCol[p.category].accent,fontSize:18}}>{prevalence.toFixed(2)}%</span>
+                  </label>
+                  <input type="range" min="0.01" max="25" step="0.01" value={prevalence} onChange={e=>setCustPrev(parseFloat(e.target.value))} style={{width:"100%",accentColor:catCol[p.category].accent}} />
+                  <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#999",fontFamily:sf}}>
+                    <span>0.01%</span>
+                    <span style={{cursor:"pointer",color:catCol[p.category].accent,fontWeight:600}} onClick={()=>setCustPrev(null)}>Reset to age-based ({basePrev}%)</span>
+                    <span>25%</span>
+                  </div>
+                  <div style={{marginTop:6,fontSize:11,color:"#666",fontStyle:"italic"}}>{p.prevNote} <RefLinks ids={p.prevRefs} /></div>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:18}}>
+                  {[{label:"Positive Predictive Value",val:pv.best?.ppv,desc:"P(true pathogen | positive result)"},{label:"Negative Predictive Value",val:pv.best?.npv,desc:"P(truly absent | negative result)"}].map((it,i)=>(
+                    <div key={i} style={{background:"#f9fafb",border:"1px solid #e5e7eb",borderRadius:10,padding:14,textAlign:"center"}}>
+                      <div style={{fontSize:10,fontWeight:600,textTransform:"uppercase",letterSpacing:1,color:"#666",marginBottom:6,fontFamily:sf}}>{it.label}</div>
+                      <div style={{fontSize:34,fontWeight:800,color:it.val==null?"#999":it.val>=90?"#059669":it.val>=70?"#D97706":"#DC2626",fontFamily:sf}}>{it.val!=null?`${it.val.toFixed(1)}%`:"N/A"}</div>
+                      <div style={{fontSize:10,color:"#888",marginTop:4,fontFamily:sf}}>{it.desc}</div>
                     </div>
                   ))}
                 </div>
-                {pathogen.bestEstimateSensitivity != null && (
-                  <div style={{ fontSize: 12, color: "#444", background: "#f3f4f6", padding: 14, borderRadius: 8, lineHeight: 1.6 }}>
-                    <strong>Interpretation at {prevalence.toFixed(1)}% prevalence:</strong>{" "}
-                    {predictiveValues.best?.ppv < 50
-                      ? "At this low prevalence, a positive result is more likely FALSE POSITIVE than true positive. Confirmatory testing strongly recommended."
-                      : predictiveValues.best?.ppv < 80
-                        ? `Approximately 1 in ${Math.round(100 / (100 - predictiveValues.best.ppv))} positive results may be false positive. Clinical correlation and/or confirmatory testing recommended.`
-                        : "At this prevalence, a positive result has strong predictive value. Clinical correlation still recommended per FDA labeling."}
+                {p.bestSens!=null && (
+                  <div style={{fontSize:12,color:"#444",background:"#f3f4f6",padding:12,borderRadius:8,lineHeight:1.6}}>
+                    <strong>At {prevalence.toFixed(2)}% prevalence:</strong>{" "}
+                    {pv.best?.ppv<50 ? "A positive result is more likely FALSE POSITIVE than true positive. Confirmatory testing strongly recommended."
+                      : pv.best?.ppv<80 ? `~1 in ${Math.round(100/(100-pv.best.ppv))} positive results may be FP. Clinical correlation and/or confirmatory testing recommended.`
+                      : "A positive result has strong predictive value. Clinical correlation still recommended per FDA labeling."}
                   </div>
                 )}
               </div>
             )}
 
-            {activeTab === "tx" && (
+            {/* TEST CHAR TAB */}
+            {tab==="test" && (
               <div>
-                <div style={{ marginBottom: 16 }}>
-                  <h3 style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: 1, color: "#666", marginBottom: 8, fontFamily: sf }}>Recommended Treatment</h3>
-                  <div style={{ padding: 14, background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, lineHeight: 1.6 }}>{pathogen.treatment}</div>
-                  <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <span style={{ padding: "4px 10px", borderRadius: 12, fontSize: 11, fontWeight: 600, background: pathogen.treatmentRoute.includes("IV") ? "#FEE2E2" : "#D1FAE5", color: pathogen.treatmentRoute.includes("IV") ? "#991B1B" : "#065F46", fontFamily: sf }}>
-                      Route: {pathogen.treatmentRoute}
-                    </span>
-                    {pathogen.guidelineRefs.length > 0 && (
-                      <span style={{ padding: "4px 10px", borderRadius: 12, fontSize: 11, fontWeight: 600, background: "#EFF6FF", color: "#1E40AF", fontFamily: sf }}>
-                        Guidelines: {pathogen.guidelineRefs.map((id, i) => <span key={id}>{i > 0 && ", "}<RefLink id={id} /></span>)}
-                      </span>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,fontFamily:sf}}>
+                  <thead><tr style={{background:"#f3f4f6"}}>
+                    <th style={{padding:"8px 10px",textAlign:"left",borderBottom:"2px solid #ddd",fontWeight:700}}>Source</th>
+                    <th style={{padding:"8px 10px",textAlign:"center",borderBottom:"2px solid #ddd",fontWeight:700}}>Sens</th>
+                    <th style={{padding:"8px 10px",textAlign:"center",borderBottom:"2px solid #ddd",fontWeight:700}}>Spec</th>
+                    <th style={{padding:"8px 10px",textAlign:"left",borderBottom:"2px solid #ddd",fontWeight:700}}>Notes</th>
+                  </tr></thead>
+                  <tbody>
+                    <tr>
+                      <td style={{padding:"8px 10px",borderBottom:"1px solid #eee",fontWeight:600}}>FDA / Leber 2016 <RefLinks ids={p.fdaRefs}/></td>
+                      <td style={{padding:"8px 10px",borderBottom:"1px solid #eee",textAlign:"center",fontWeight:700,color:p.fdaSens==null?"#999":p.fdaSens>=95?"#059669":p.fdaSens>=85?"#D97706":"#DC2626"}}>{p.fdaSens!=null?`${p.fdaSens}%`:"N/A"}</td>
+                      <td style={{padding:"8px 10px",borderBottom:"1px solid #eee",textAlign:"center",fontWeight:700,color:"#059669"}}>{p.fdaSpec!=null?`${p.fdaSpec}%`:"N/A"}</td>
+                      <td style={{padding:"8px 10px",borderBottom:"1px solid #eee",fontSize:11,color:"#666"}}>{p.fdaNote}</td>
+                    </tr>
+                    {p.trujilloSens!=null && (
+                      <tr>
+                        <td style={{padding:"8px 10px",borderBottom:"1px solid #eee",fontWeight:600}}>Trujillo-Gómez 2022 <RefLinks ids={p.trujilloRefs}/></td>
+                        <td style={{padding:"8px 10px",borderBottom:"1px solid #eee",textAlign:"center",fontWeight:700,color:p.trujilloSens>=95?"#059669":p.trujilloSens>=85?"#D97706":"#DC2626"}}>{p.trujilloSens}%</td>
+                        <td style={{padding:"8px 10px",borderBottom:"1px solid #eee",textAlign:"center",fontWeight:700,color:"#059669"}}>{p.trujilloSpec}%</td>
+                        <td style={{padding:"8px 10px",borderBottom:"1px solid #eee",fontSize:11,color:"#666"}}>{p.trujilloNote}</td>
+                      </tr>
                     )}
+                    <tr style={{background:"#f0fdf4"}}>
+                      <td style={{padding:"8px 10px",fontWeight:700}}>Best Estimate <RefLinks ids={p.bestRefs}/></td>
+                      <td style={{padding:"8px 10px",textAlign:"center",fontWeight:700,color:p.bestSens==null?"#999":p.bestSens>=95?"#059669":p.bestSens>=85?"#D97706":"#DC2626"}}>{p.bestSens!=null?`${p.bestSens}%`:"Unknown"}</td>
+                      <td style={{padding:"8px 10px",textAlign:"center",fontWeight:700,color:"#059669"}}>{p.bestSpec!=null?`${p.bestSpec}%`:"Unknown"}</td>
+                      <td style={{padding:"8px 10px",fontSize:11,color:"#444",fontWeight:500}}>{p.bestNote}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                {p.importantNotes && (
+                  <div style={{marginTop:14,padding:12,background:"#FFFBEB",border:"1px solid #FCD34D",borderRadius:8,fontSize:12,color:"#78350F",lineHeight:1.5}}>
+                    <strong>⚠ Important:</strong> {p.importantNotes}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TX TAB */}
+            {tab==="tx" && (
+              <div>
+                <div style={{marginBottom:14}}>
+                  <h3 style={{fontSize:12,textTransform:"uppercase",letterSpacing:1,color:"#666",marginBottom:6,fontFamily:sf}}>Pathogen-Specific Treatment</h3>
+                  <div style={{padding:12,background:"#f9fafb",border:"1px solid #e5e7eb",borderRadius:8,fontSize:13,lineHeight:1.6}}>{p.treatment}</div>
+                  <div style={{marginTop:6,display:"flex",gap:6,flexWrap:"wrap"}}>
+                    <span style={{padding:"3px 10px",borderRadius:12,fontSize:10,fontWeight:600,background:p.treatmentRoute.includes("IV")?"#FEE2E2":"#D1FAE5",color:p.treatmentRoute.includes("IV")?"#991B1B":"#065F46",fontFamily:sf}}>Route: {p.treatmentRoute}</span>
+                    {p.guidelineRefs.length>0 && <span style={{padding:"3px 10px",borderRadius:12,fontSize:10,fontWeight:600,background:"#EFF6FF",color:"#1E40AF",fontFamily:sf}}>{p.guidelineRefs.map((id,i)=><span key={id}>{i>0&&", "}<RefLink id={id}/></span>)}</span>}
                   </div>
                 </div>
 
-                <div style={{ padding: 16, borderRadius: 10, border: `2px solid ${pathogen.canDischarge ? "#059669" : "#DC2626"}`, background: pathogen.canDischarge ? "#D1FAE5" : "#FEE2E2", marginBottom: 16 }}>
-                  <h3 style={{ fontSize: 14, fontWeight: 700, margin: "0 0 10px", color: pathogen.canDischarge ? "#065F46" : "#991B1B", fontFamily: sf }}>
-                    {pathogen.canDischarge ? "✓ Outpatient Management May Be Appropriate" : "✗ Inpatient Admission Required"}
-                  </h3>
-                  <div style={{ fontSize: 12, lineHeight: 1.7, whiteSpace: "pre-line", color: pathogen.canDischarge ? "#065F46" : "#991B1B" }}>{pathogen.dischargeNote}</div>
+                {/* Empiric management */}
+                <div style={{marginBottom:14}}>
+                  <h3 style={{fontSize:12,textTransform:"uppercase",letterSpacing:1,color:"#666",marginBottom:6,fontFamily:sf}}>Empiric Therapy Management</h3>
+                  <div style={{padding:12,background:"#DBEAFE",border:"1px solid #93C5FD",borderRadius:8,fontSize:12,lineHeight:1.6,color:"#1E3A5F",marginBottom:6}}>
+                    <strong>Antibiotics:</strong> {p.empiricAbx}
+                  </div>
+                  <div style={{padding:12,background:"#EDE9FE",border:"1px solid #C4B5FD",borderRadius:8,fontSize:12,lineHeight:1.6,color:"#5B21B6"}}>
+                    <strong>Antivirals:</strong> {p.empiricAntiviral}
+                  </div>
                 </div>
 
-                <div style={{ padding: 14, background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 8, fontSize: 12, color: "#1E3A5F", lineHeight: 1.6 }}>
-                  <strong>Pediatric Considerations:</strong> {pathogen.keyPediatricConsiderations}
+                {/* Disposition */}
+                <div style={{padding:14,borderRadius:10,border:`2px solid ${p.canDischarge?"#059669":"#DC2626"}`,background:p.canDischarge?"#D1FAE5":"#FEE2E2",marginBottom:14}}>
+                  <h3 style={{fontSize:13,fontWeight:700,margin:"0 0 8px",color:p.canDischarge?"#065F46":"#991B1B",fontFamily:sf}}>
+                    {p.canDischarge?"✓ Outpatient Management May Be Appropriate":"✗ Inpatient Admission Required"}
+                  </h3>
+                  <div style={{fontSize:12,lineHeight:1.7,whiteSpace:"pre-line",color:p.canDischarge?"#065F46":"#991B1B"}}>{p.dischargeNote}</div>
+                </div>
+
+                <div style={{padding:12,background:"#EFF6FF",border:"1px solid #BFDBFE",borderRadius:8,fontSize:12,color:"#1E3A5F",lineHeight:1.6}}>
+                  <strong>Pediatric Considerations:</strong> {p.pedNotes}
                 </div>
               </div>
             )}
@@ -650,16 +690,14 @@ function BioFireMEPanelTool() {
       )}
 
       {/* References */}
-      <div style={{ marginTop: 32, borderTop: "2px solid #e5e7eb", paddingTop: 16 }}>
-        <button onClick={() => setShowSources(!showSources)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#666", fontWeight: 600, fontFamily: sf, padding: 0 }}>
-          {showSources ? "▾" : "▸"} All References (clickable links)
+      <div style={{marginTop:28,borderTop:"2px solid #e5e7eb",paddingTop:14}}>
+        <button onClick={()=>setShowSrc(!showSrc)} style={{background:"none",border:"none",cursor:"pointer",fontSize:12,color:"#666",fontWeight:600,fontFamily:sf,padding:0}}>
+          {showSrc?"▾":"▸"} All References
         </button>
-        {showSources && (
-          <div style={{ marginTop: 12, fontSize: 11, color: "#555", lineHeight: 2.0 }}>
-            {Object.entries(REFS).map(([key, r]) => (
-              <p key={key} style={{ margin: "2px 0" }}>
-                <a href={r.url} target="_blank" rel="noopener noreferrer" style={{ color: "#2563EB", textDecoration: "none" }}>{r.full}</a>
-              </p>
+        {showSrc && (
+          <div style={{marginTop:10,fontSize:11,color:"#555",lineHeight:2}}>
+            {Object.entries(REFS).map(([k,r])=>(
+              <p key={k} style={{margin:"1px 0"}}><a href={r.url} target="_blank" rel="noopener noreferrer" style={{color:"#2563EB",textDecoration:"none"}}>{r.short}</a> — {r.url}</p>
             ))}
           </div>
         )}
@@ -668,8 +706,7 @@ function BioFireMEPanelTool() {
   );
 }
 
-
-ReactDOM.createRoot(document.getElementById('root')).render(<BioFireMEPanelTool />);
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
 </script>
 </body>
 </html>
